@@ -1,8 +1,12 @@
+mod numerics;
+
+use num_complex::Complex64;
+use numerics::{xi_symmetry_residual, zeta_checked};
 use riemann_ndim_bench::{PiRadialGeometry, SpectralPoint};
 
 fn main() {
-    println!("Riemann N-dimensional bench - foundation v0");
-    println!("This stage checks symmetry and radial-coordinate identities only.\n");
+    println!("Riemann N-dimensional bench - phase 1");
+    println!("Geometry diagnostics plus independent zeta/xi numerical checks.\n");
 
     println!("sigma      mirror      raw_radius       normalized       log_normalized");
     println!("--------------------------------------------------------------------------");
@@ -24,4 +28,27 @@ fn main() {
         "\ncritical raw radius = {:.15}",
         PiRadialGeometry::critical_radius()
     );
+
+    println!("\nIndependent numerical checks:");
+    for s in [
+        Complex64::new(2.0, 0.0),
+        Complex64::new(0.5, 14.0),
+        Complex64::new(0.37, 9.25),
+    ] {
+        let estimate = zeta_checked(s).expect("zeta evaluation failed");
+        println!(
+            "s={:.3}{:+.3}i  zeta={:.12}{:+.12}i  delta={:.3e}  N={}  B={}",
+            s.re,
+            s.im,
+            estimate.value.re,
+            estimate.value.im,
+            estimate.cross_resolution_delta,
+            estimate.fine_n,
+            estimate.bernoulli_terms,
+        );
+    }
+
+    let probe = Complex64::new(0.37, 9.25);
+    let residual = xi_symmetry_residual(probe).expect("xi evaluation failed");
+    println!("xi(s)=xi(1-s) relative residual at probe: {residual:.3e}");
 }
