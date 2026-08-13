@@ -1,11 +1,12 @@
 mod numerics;
-mod toeplitz;
 
 use num_complex::Complex64;
 use numerics::{xi_symmetry_residual, zeta_checked};
-use riemann_ndim_bench::{PiRadialGeometry, SpectralPoint};
+use riemann_ndim_bench::{
+    PiRadialGeometry, SpectralPoint,
+    toeplitz::{LogLattice, SymmetricToeplitz},
+};
 use std::f64::consts::LN_2;
-use toeplitz::{LogLattice, SymmetricToeplitz};
 
 fn main() {
     println!("Riemann N-dimensional bench - phase 2");
