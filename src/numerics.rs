@@ -42,10 +42,7 @@ pub struct EulerMaclaurinConfig {
 
 impl EulerMaclaurinConfig {
     pub const fn new(n: usize, bernoulli_terms: usize) -> Self {
-        Self {
-            n,
-            bernoulli_terms,
-        }
+        Self { n, bernoulli_terms }
     }
 
     pub fn for_point(s: Complex64) -> Self {
@@ -106,8 +103,8 @@ pub fn zeta_euler_maclaurin(
     }
 
     let n = config.n as f64;
-    let tail_integral = real_base_complex_power(n, Complex64::new(1.0, 0.0) - s)
-        / (s - Complex64::new(1.0, 0.0));
+    let tail_integral =
+        real_base_complex_power(n, Complex64::new(1.0, 0.0) - s) / (s - Complex64::new(1.0, 0.0));
     let endpoint = real_base_complex_power(n, -s) * 0.5;
 
     sum += tail_integral + endpoint;
@@ -151,8 +148,7 @@ pub fn gamma_lanczos(z: Complex64) -> Complex64 {
     let mut x = Complex64::new(LANCZOS_COEFF[0], 0.0);
 
     for (index, coefficient) in LANCZOS_COEFF.iter().enumerate().skip(1) {
-        x += Complex64::new(*coefficient, 0.0)
-            / (shifted + Complex64::new(index as f64, 0.0));
+        x += Complex64::new(*coefficient, 0.0) / (shifted + Complex64::new(index as f64, 0.0));
     }
 
     let t = shifted + Complex64::new(LANCZOS_G + 0.5, 0.0);
