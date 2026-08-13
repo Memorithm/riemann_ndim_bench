@@ -61,9 +61,7 @@ impl EulerMaclaurinConfig {
 #[derive(Debug, Clone, Copy)]
 pub struct ZetaEstimate {
     pub value: Complex64,
-    pub coarse_value: Complex64,
     pub cross_resolution_delta: f64,
-    pub next_term_norm: Option<f64>,
     pub fine_n: usize,
     pub bernoulli_terms: usize,
 }
@@ -124,13 +122,9 @@ pub fn zeta_checked(s: Complex64) -> Result<ZetaEstimate, NumericError> {
     let value = zeta_euler_maclaurin(s, fine_config)?;
     let cross_resolution_delta = (value - coarse_value).norm();
 
-    let next_term_norm = None;
-
     Ok(ZetaEstimate {
         value,
-        coarse_value,
         cross_resolution_delta,
-        next_term_norm,
         fine_n: fine_config.n,
         bernoulli_terms: fine_config.bernoulli_terms,
     })
