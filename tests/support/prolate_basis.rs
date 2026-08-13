@@ -27,7 +27,11 @@ impl Basis {
         let lambdas = indices.iter().map(|&k| diagonal[k]).collect();
         let samples = indices
             .iter()
-            .map(|&k| (0..order).map(|i| vectors[(i, k)] / weights[i].sqrt()).collect())
+            .map(|&k| {
+                (0..order)
+                    .map(|i| vectors[(i, k)] / weights[i].sqrt())
+                    .collect()
+            })
             .collect();
         Self {
             nodes,

@@ -1,7 +1,7 @@
-#[path = "../src/quadrature.rs"]
-mod quadrature;
 #[path = "support/prolate_basis.rs"]
 mod prolate_basis;
+#[path = "../src/quadrature.rs"]
+mod quadrature;
 
 use prolate_basis::Basis;
 use quadrature::GaussLegendreUnit;
@@ -29,8 +29,7 @@ fn c_n(basis: &Basis, mode: usize, rho: f64, integration: &GaussLegendreUnit) ->
         .sum::<f64>()
         * span;
 
-    rho.sqrt() * integral
-        + rho.powf(-1.5) * basis.derivative(mode, lower) * basis.value(mode, 1.0)
+    rho.sqrt() * integral + rho.powf(-1.5) * basis.derivative(mode, lower) * basis.value(mode, 1.0)
         - rho.powf(1.5) * basis.value(mode, 1.0) * basis.derivative(mode, rho)
 }
 
