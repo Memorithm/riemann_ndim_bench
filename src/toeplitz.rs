@@ -202,7 +202,7 @@ mod tests {
 
     #[test]
     fn sampled_kernel_uses_omega_weight() {
-        let lattice = LogLattice::new(0.3, 0.1).unwrap();
+        let lattice = LogLattice::new(0.25, 0.1).unwrap();
         let matrix = SymmetricToeplitz::sample_normalized_kernel(lattice, |x| 2.0 + x).unwrap();
         let expected = [0.2, 0.21, 0.22];
         for (&actual, &target) in matrix.first_row().iter().zip(expected.iter()) {
@@ -214,7 +214,7 @@ mod tests {
     fn matrix_free_application_matches_hand_calculation() {
         let matrix = SymmetricToeplitz::from_first_row(vec![2.0, 1.0, 0.5]).unwrap();
         let result = matrix.apply(&[1.0, 2.0, -1.0]).unwrap();
-        let expected = [3.5, 4.0, 1.5];
+        let expected = [3.5, 4.0, 0.5];
         for (&actual, &target) in result.iter().zip(expected.iter()) {
             assert!((actual - target).abs() < EPS);
         }
@@ -241,7 +241,7 @@ mod tests {
 
     #[test]
     fn constant_sampled_kernel_has_rank_one_spectrum() {
-        let lattice = LogLattice::new(0.3, 0.1).unwrap();
+        let lattice = LogLattice::new(0.25, 0.1).unwrap();
         let matrix = SymmetricToeplitz::sample_normalized_kernel(lattice, |_| 1.0).unwrap();
         let eigenvalues = matrix.eigenvalues().unwrap();
         let largest = *eigenvalues.last().unwrap();
