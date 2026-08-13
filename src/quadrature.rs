@@ -105,6 +105,7 @@ mod tests {
     #[test]
     fn integrates_polynomials() {
         let quadrature = GaussLegendreUnit::new(16).unwrap();
+        assert_eq!(quadrature.order(), 16);
         for degree in [0_i32, 1, 2, 5, 9] {
             let numerical = quadrature.integrate(|x| x.powi(degree));
             let exact = 1.0 / (degree as f64 + 1.0);
