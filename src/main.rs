@@ -2,11 +2,15 @@ mod numerics;
 
 use num_complex::Complex64;
 use numerics::{xi_symmetry_residual, zeta_checked};
-use riemann_ndim_bench::{PiRadialGeometry, SpectralPoint};
+use riemann_ndim_bench::{
+    PiRadialGeometry, SpectralPoint,
+    toeplitz::{LogLattice, SymmetricToeplitz},
+};
+use std::f64::consts::LN_2;
 
 fn main() {
-    println!("Riemann N-dimensional bench - phase 1");
-    println!("Geometry diagnostics plus independent zeta/xi numerical checks.\n");
+    println!("Riemann N-dimensional bench - phase 2");
+    println!("Geometry, independent zeta/xi checks, and sourced Toeplitz discretization.\n");
 
     println!("sigma      mirror      raw_radius       normalized       log_normalized");
     println!("--------------------------------------------------------------------------");
@@ -51,4 +55,22 @@ fn main() {
     let probe = Complex64::new(0.37, 9.25);
     let residual = xi_symmetry_residual(probe).expect("xi evaluation failed");
     println!("xi(s)=xi(1-s) relative residual at probe: {residual:.3e}");
+
+    println!("\nN-dimensional Toeplitz infrastructure:");
+    let lattice = LogLattice::new(LN_2, 1.0e-3).expect("valid logarithmic lattice");
+    println!(
+        "interval=ln(2), omega={:.3e}, q={:.12}, max_index={}, dimension={}",
+        lattice.omega(),
+        lattice.q(),
+        lattice.max_index(),
+        lattice.dimension()
+    );
+
+    let synthetic = SymmetricToeplitz::from_first_row(vec![2.0, 1.0])
+        .expect("valid synthetic Toeplitz operator");
+    let eigenvalues = synthetic
+        .eigenvalues()
+        .expect("self-adjoint eigendecomposition failed");
+    println!("synthetic 2x2 spectrum = {eigenvalues:?}");
+    println!("Q-epsilon kernel is intentionally not synthesized in phase 2.");
 }
