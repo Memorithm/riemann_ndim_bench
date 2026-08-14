@@ -224,9 +224,9 @@ at `p=1009,4001,16001,64007`. Its limiting aggregates agree closely with the dir
 
 The final two large-p increments of the scaled vector decay with effective order close to one in `1/p`, consistent with the unscaled crossing remainder being `O(p^-2)` at fixed `m`.
 
-## Auxiliary large-m study — pending Rust reproduction
+## Large-m study — reproduced in Rust
 
-The exact derivative was independently evaluated beyond the sizes reached by the semilocal quadrature. These values are recorded as targets for a Rust regression test; they are not promoted to project findings until reproduced by Rust.
+The exact derivative was independently evaluated beyond the sizes reached by the semilocal quadrature and has now been reproduced directly in Rust on Thor through block size `m=1024`. Full output and low-edge follow-up are recorded in `PHASE4_RUST_VALIDATION_2026-08-14.md`.
 
 Let
 
@@ -246,25 +246,23 @@ on the merged `W+ union W-` spectrum. With one eighth removed from each edge for
 | 512 | 0.1184232308 | 0.0352144134 | 0.4113396754 | 0.2469943647 |
 | 1024 | 0.0957325576 | 0.0249083011 | 0.4106039832 | 0.2469881902 |
 
-The table suggests:
+The last-doubling effective exponents are approximately
 
 ```text
-RMS(v)             ~ const / m,
-Linf(v)            ~ const / sqrt(m),
-trimmed mean_abs(v) ~ const / m^(3/2).
+trimmed L1 : 1.499539430
+RMS        : 1.002582610
+Linf       : 0.500036066
 ```
 
-For example, `m^(3/2)*trimmed_mean_abs(v)` is already close to `0.797` at large `m`.
+and `m^(3/2)*trimmed_mean_abs(v)` is `0.7970656337` at `m=1024`. These are strong numerical asymptotic signals, but they are not proved `m -> infinity` theorems.
 
-The untrimmed L1 response decays more slowly than the trimmed interior and appears to be dominated by the low spectral edge. A possible logarithmic correction is only a hypothesis at this stage.
+The untrimmed response is dominated by the low spectral edge. A simple harmonic `C/k` law on a moving window was tested and is not stable at the available sizes. A double-scaling description in `x=k/sqrt(m)` gives a better finite-size collapse, but the small-`x` limit of the scaling profile remains unresolved.
 
-## Required Rust follow-up
+## Required follow-up
 
-1. Implement `alpha_n` by recurrence.
-2. Build exact dense/tridiagonal `K(0)` and `K'(0)` for both parities.
-3. Use `faer::linalg::solvers::SelfAdjointEigen`, including `U()` and `S()`, to evaluate Rayleigh derivatives.
-4. Reproduce the `m=16,24,32` large-p validation targets.
-5. Reproduce the auxiliary large-`m` table through at least `m=1024`.
-6. Only after Rust reproduction, fit edge/bulk asymptotic profiles.
+1. Isolate the exact derivative implementation from the exploratory test file into focused Rust code/tests.
+2. Quantify the `W+`/`W-` pairing and the low-edge double-scaling profile.
+3. Determine whether the untrimmed L1 growth has a genuine logarithmic asymptotic or a different slowly varying correction.
+4. Keep finite-compression statements separate from any zeta-zero interpretation.
 
 No statement in this note identifies these finite crossing parameters with Riemann-zeta zeros or proves RH.
