@@ -43,7 +43,10 @@ Résultats actuellement établis à dimension finie dans le banc :
 - reproduction Rust directe jusqu'à `m=4096` ;
 - calcul eigenvalues-only à haute dimension avec contrôle explicite de l'annulation numérique ;
 - checkpoints homogènes validés jusqu'à `m=16384` pour la variation totale de premier ordre ;
-- signal numérique robuste compatible avec une croissance quadratique en `log m`, avec corrections de taille finie encore non dérivées analytiquement.
+- dérivation formelle du coefficient principal `1/(2*pi^2)` de la croissance `(log m)^2` ;
+- première correction sans fit `3/[32*pi^2*(log 2)^2]` dans le coefficient centré `A_m` ;
+- factorisation exacte par état fondamental et noyau d'inverse fini explicite ;
+- validation spectrale du modèle de Laplacien libre au soft edge, avec phase asymptotique `j+1` et espacement constant.
 
 Documentation Phase 4 :
 
@@ -52,6 +55,10 @@ Documentation Phase 4 :
 - [`docs/PHASE4_FIRST_ORDER_SIGN_LEMMA.md`](docs/PHASE4_FIRST_ORDER_SIGN_LEMMA.md)
 - [`docs/PHASE4_RUST_VALIDATION_2026-08-14.md`](docs/PHASE4_RUST_VALIDATION_2026-08-14.md)
 - [`docs/PHASE4_NUMERICAL_CHECKPOINTS_2026-08-15.md`](docs/PHASE4_NUMERICAL_CHECKPOINTS_2026-08-15.md)
+- [`docs/PHASE4_LOG2_ASYMPTOTIC_HEURISTIC.md`](docs/PHASE4_LOG2_ASYMPTOTIC_HEURISTIC.md)
+- [`docs/PHASE4_FIRST_FINITE_SIZE_CORRECTION.md`](docs/PHASE4_FIRST_FINITE_SIZE_CORRECTION.md)
+- [`docs/PHASE4_EXACT_GROUND_STATE_FACTORISATION.md`](docs/PHASE4_EXACT_GROUND_STATE_FACTORISATION.md)
+- [`docs/PHASE4_FREE_LAPLACIAN_SPECTRAL_VALIDATION_2026-08-15.md`](docs/PHASE4_FREE_LAPLACIAN_SPECTRAL_VALIDATION_2026-08-15.md)
 
 ## Checkpoints numériques actuels
 
@@ -89,24 +96,34 @@ A_4096 = 0.05070228504273...
 A_8192 = 0.05068278870666...
 ```
 
-La constante `1/(2*pi^2) = 0.05066059182116...` est une **cible numérique candidate seulement**. L'écart fini observé est compatible avec une correction approximativement proportionnelle à `log(m)/m`; cela doit encore être dérivé analytiquement.
+La constante
+
+```text
+1/(2*pi^2) = 0.05066059182116...
+```
+
+est désormais motivée par les coefficients locaux du soft edge et pas seulement par un fit numérique. La dérivation globale reste formelle tant que la trace singulière `Tr(K^(-1/2) H)` n'est pas contrôlée uniformément.
 
 ## Prochaine cible
 
-La priorité n'est plus d'augmenter aveuglément la taille des matrices. Le prochain objectif est d'exploiter l'identité de trace finie
+La priorité est maintenant d'exploiter la factorisation exacte
 
 ```text
-d/dq Tr sqrt(K(q)) |_{q=0}
-  = (1/2) Tr(K(0)^(-1/2) K'(0))
+T_m^(-1) = R_m R_m^T
 ```
 
-et les coefficients tridiagonaux explicites de `K(0)` et `K'(0)` pour obtenir une asymptotique analytique de `S(m)`.
+avec l'opérateur triangulaire de Hardy/Copson explicite `R_m`, ainsi que la validation du Laplacien libre au bas du spectre, pour obtenir un contrôle uniforme de
+
+```text
+Tr(T_m^(-1/2) H_m).
+```
 
 ## Références principales
 
 - Alain Connes, Caterina Consani, Henri Moscovici, *On q-series and the moment problem associated to local factors*, arXiv:2403.01247.
 - Alain Connes, Caterina Consani, Henri Moscovici, *Zeta zeros and prolate wave operators*, arXiv:2310.18423.
 - Alain Connes, Caterina Consani, *Weil positivity and Trace formula, the archimedean place*, arXiv:2006.13771.
+- Grzegorz Świderski, *Periodic perturbations of unbounded Jacobi matrices III: The soft edge regime*, arXiv:1707.06486.
 
 ## Principe du projet
 
