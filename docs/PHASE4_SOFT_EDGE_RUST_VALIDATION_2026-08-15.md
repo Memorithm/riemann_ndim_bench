@@ -1,91 +1,168 @@
 # Phase 4 soft-edge Rust validation — 2026-08-15
 
-This note records a direct Rust validation of the local asymptotic coefficients used in `PHASE4_LOG2_ASYMPTOTIC_HEURISTIC.md`.
+This note records direct coefficient-level Rust checks for the soft-edge asymptotics used in the formal `(log m)^2` derivation.
 
-The test uses the exact finite-dimensional coefficient generator already present in the local Phase 4 exploratory code on Thor. No eigendecomposition and no fit to the total-variation data is involved.
+The tests use only the exact finite coefficients already implemented in `tests/semilocal_multi_prime_probe.rs`. No eigendecomposition, no global fit, and no regression is involved.
 
-## Quantities tested
+## Leading row asymptotics
 
-For row index `i`, after alternating conjugation of the positive off-diagonal generalized-prolate matrix, define
+For parity degree
 
 ```text
-b_i = K_{i,i+1},
-V_i = K_{ii} - K_{i,i+1} - K_{i,i-1}.
+d = 2i + epsilon,
+epsilon = 0 for W+,
+epsilon = 1 for W-,
 ```
 
-For the sign-corrected first-order perturbation `H` (`H=-K'_+` for `W+`, `H=K'_-` for `W-`), define
+the test `validates_soft_edge_row_asymptotic_coefficients` checks
 
 ```text
-W_i = H_{ii} - H_{i,i+1} - H_{i,i-1}.
-```
-
-The formal soft-edge analysis predicts
-
-```text
-b_i ~ i/(4*pi),
-V_i ~ 1/(64*pi*i),
-W_i ~ 1/(2*pi^(3/2)*sqrt(i)),
+4*pi*b_i/i -> 1,
+64*pi*i*V_i -> 1,
+2*pi^(3/2)*sqrt(i)*W_i -> 1,
 pi*i*W_i/sqrt(b_i) -> 1.
 ```
 
-The last limit is the combined coefficient entering the singular local trace density.
-
-## Rust output
-
-### W+
-
-| i | `4*pi*b/i` | `64*pi*i*V` | `2*pi^(3/2)*sqrt(i)*W` | `pi*i*W/sqrt(b)` |
-|---:|---:|---:|---:|---:|
-| 64 | 1.009776959092385 | 0.997868601735470 | 0.998989743912227 | 0.994141723333574 |
-| 256 | 1.002442119766469 | 0.999500529483240 | 0.999753746033940 | 0.998535218231022 |
-| 1024 | 1.000610396238726 | 0.999877229608598 | 0.999938832637215 | 0.999633792825281 |
-| 4096 | 1.000152590684167 | 0.999969437335134 | 0.999984732946113 | 0.999908447499060 |
-| 16384 | 1.000038147147273 | 0.999992188637103 | 0.999996184790988 | 0.999977111835804 |
-
-Final absolute errors from 1 at `i=16384`:
+At `i=16384`:
 
 ```text
-4*pi*b/i                     3.8147147e-5
-64*pi*i*V                    7.8113629e-6
-2*pi^(3/2)*sqrt(i)*W         3.8152090e-6
-pi*i*W/sqrt(b)               2.2888164e-5
+W+
+4*pi*b/i                  1.000038147147273
+64*pi*i*V                 0.9999921886371026
+2*pi^(3/2)*sqrt(i)*W      0.9999961847909877
+pi*i*W/sqrt(b)            0.9999771118358036
+
+W-
+4*pi*b/i                  1.000068664725392
+64*pi*i*V                 0.9999622280748391
+2*pi^(3/2)*sqrt(i)*W      0.9999809265214316
+pi*i*W/sqrt(b)            0.9999465965815049
 ```
 
-### W-
+All four leading scaled quantities are within `7e-5` of one for both parities.
 
-| i | `4*pi*b/i` | `64*pi*i*V` | `2*pi^(3/2)*sqrt(i)*W` | `pi*i*W/sqrt(b)` |
-|---:|---:|---:|---:|---:|
-| 64 | 1.017589372064102 | 0.990150933875054 | 0.995118215453882 | 0.986480249900595 |
-| 256 | 1.004395243378969 | 0.997553178699692 | 0.998779335513381 | 0.996591605451556 |
-| 1024 | 1.001098677466935 | 0.999389308393292 | 0.999694826220265 | 0.999146107238087 |
-| 4096 | 1.000274660996326 | 0.999847348043911 | 0.999923706173615 | 0.999786414433789 |
-| 16384 | 1.000068664725392 | 0.999962228074839 | 0.999980926521432 | 0.999946596581505 |
+## First finite-size correction
 
-Final absolute errors from 1 at `i=16384`:
+The follow-up test `validates_soft_edge_first_finite_size_correction` uses the symmetric edge coefficient
 
 ```text
-4*pi*b/i                     6.8664725e-5
-64*pi*i*V                    3.7771925e-5
-2*pi^(3/2)*sqrt(i)*W         1.9073479e-5
-pi*i*W/sqrt(b)               5.3403418e-5
+b_bar = (b_forward + b_backward)/2
 ```
 
-All test assertions with tolerance `1e-4` passed for both parity blocks.
+and checks the first row correction predicted from the exact formulas:
+
+```text
+4*pi*b_bar/i
+ = 1 + (4 epsilon + 1)/(8i) + O(i^-2),
+
+64*pi*i*V
+ = 1 - (4 epsilon + 1)/(8i) + O(i^-2),
+
+2*pi^(3/2)*sqrt(i)*W
+ = 1 - (4 epsilon + 1)/(16i) + O(i^-2),
+
+pi*i*W/sqrt(b_bar)
+ = 1 - (4 epsilon + 1)/(8i) + O(i^-2).
+```
+
+`V` is a small residual obtained by subtracting three quantities of order `i`. Its first correction becomes f64-cancellation limited before the other quantities; therefore the retained validation samples `V` at `i=4096`, while `b_bar`, `W`, and the trace prefactor are sampled at `i=16384`.
+
+Retained errors against the predicted first-correction constants:
+
+```text
+W+
+  b_bar            +2.8610011213e-6
+  V                -1.8467529208e-4
+  W                -8.3844570327e-6
+  trace prefactor  -9.2188602139e-6
+
+W-
+  b_bar            +2.8609138099e-6
+  V                -2.6241214255e-4
+  W                +1.2713462638e-7
+  trace prefactor  +1.3597491488e-5
+```
+
+In particular,
+
+```text
+W+ : i(C_i-1) -> -1/8,
+W- : i(C_i-1) -> -5/8,
+```
+
+where
+
+```text
+C_i = pi*i*W_i/sqrt(b_bar(i)).
+```
+
+This is the row-level quantity that controls the logarithmic first finite-size correction in the formal singular trace calculation.
+
+## Induced no-fit correction for the centered coefficient
+
+The row analysis predicts
+
+```text
+D = 3/(8*pi^2)
+```
+
+for the coefficient of `log(m)/m` in the formal expansion of `S(m)`.
+
+For
+
+```text
+A_m
+ = [S(2m)-2S(m)+S(m/2)]/[2(log 2)^2],
+```
+
+this gives
+
+```text
+c_A
+ = 3/[32*pi^2*(log 2)^2]
+ = 0.01977063457049387...
+```
+
+for the coefficient in
+
+```text
+A_m
+ = 1/(2*pi^2)
+   + c_A log(m)/m
+   + O(1/m).
+```
+
+The homogeneous Rust checkpoints give:
+
+```text
+m=256   0.02043519186892146
+m=512   0.02034611805432550
+m=1024  0.02028111986421427
+m=2048  0.02023106505876094
+m=4096  0.02053140616003269
+m=8192  0.02017962874379530
+```
+
+for
+
+```text
+m*(A_m-1/(2*pi^2))/log(m).
+```
+
+At `m=8192` the relative gap to the no-fit prediction is
+
+```text
+2.068695224946514e-2
+```
+
+or about `2.07%`.
 
 ## Interpretation
 
-This validates, in Rust and independently of the global spectral fits, the four local limits used to obtain the formal soft-edge density
+The leading coefficient `1/(2*pi^2)` and the first finite-size coefficient above are now both supported by direct exact-row Rust asymptotics rather than by free regression against the global `S(m)` sequence.
 
-```text
-h(i,theta)/sqrt(k(i,theta))
-  ~ 1/(pi*i)
-     / sqrt(theta^2 + 1/(16*i^2)).
-```
-
-Consequently the numerical candidate `1/(2*pi^2)` for the coefficient of `(log m)^2` is supported by the exact row-coefficient asymptotics, not merely by regression of `S(m)`.
-
-This remains a validation of the local asymptotic input. A proof of the global trace asymptotic still requires uniform control of the finite-section resolvent / `K^(-1/2)` near the soft edge.
+The passage from row asymptotics to the global singular trace remains formal. A rigorous proof still requires uniform soft-edge control of `K^{-1/2}` or an equivalent resolvent representation.
 
 ## Scientific boundary
 
-These statements concern the asymptotics of the finite semilocal generalized-prolate perturbation only. They do not identify compression crossings with Riemann-zeta zeros and do not imply the Riemann hypothesis.
+These are statements about finite semilocal prolate perturbations. They do not identify finite compression crossings with Riemann-zeta zeros and do not imply the Riemann hypothesis.
