@@ -4,134 +4,116 @@ Banc de recherche numérique en Rust autour de l'hypothèse de Riemann, conçu p
 
 1. les identités mathématiques exactes ;
 2. les constructions numériques vérifiables ;
-3. les hypothèses géométriques expérimentales.
+3. les hypothèses et asymptotiques expérimentales.
 
 ## Statut scientifique
 
 Ce dépôt **ne contient pas de preuve de l'hypothèse de Riemann**.
 
-L'hypothèse de Riemann affirme que tous les zéros non triviaux de `zeta(s)` ont une partie réelle égale à `1/2`. Le Clay Mathematics Institute la classe toujours parmi les Millennium Prize Problems non résolus.
+Les calculs actuels portent sur des compressions finies d'opérateurs de type prolate/semilocal inspirés des travaux de Connes, Consani et Moscovici. Les paramètres de croisement de ces matrices finies ne sont pas identifiés aux zéros de `zeta`, et aucune extrapolation numérique n'est considérée comme une preuve.
 
-Référence : https://www.claymath.org/millennium/riemann-hypothesis/
+## État du banc
 
-## Fondation mathématique utilisée
+### Phase 0–2 — fondation et noyau numérique
 
-La fonction xi de Riemann peut être écrite
+- représentation de `s = sigma + i t` ;
+- géométrie expérimentale `pi^(-sigma/2)` avec tests d'involution ;
+- évaluation contrôlée de `zeta`, `xi` et de l'équation fonctionnelle ;
+- matrices de Toeplitz symétriques et solveur spectral en Rust.
 
-```text
-xi(s) = (1/2) s (s - 1) Gamma(s/2) pi^(-s/2) zeta(s)
-```
+### Phase 3 — opérateur archimédien source-locké
 
-et satisfait
+La construction `Q_epsilon` / prolate de Connes–Consani a été reproduite numériquement, notamment le premier benchmark publié et les valeurs propres de la compression de Toeplitz de référence.
 
-```text
-xi(s) = xi(1 - s).
-```
+Documentation :
 
-Référence : NIST Digital Library of Mathematical Functions, §25.4, équations 25.4.3 et 25.4.4 :
-https://dlmf.nist.gov/25.4
+- [`docs/Q_EPSILON_SPEC.md`](docs/Q_EPSILON_SPEC.md)
+- [`docs/TOEPLITZ_WEIL.md`](docs/TOEPLITZ_WEIL.md)
+- [`docs/PHASE3_CHECKLIST.md`](docs/PHASE3_CHECKLIST.md)
 
-Pour `s = sigma + i t`, le module du seul facteur `pi^(-s/2)` vaut exactement
+### Phase 4 — perturbation semilocale `q = 1/p`
 
-```text
-|pi^(-s/2)| = pi^(-sigma/2).
-```
+La phase active utilise le premier coefficient exact de la récurrence de Jacobi semilocale pour construire la dérivée à `q=0` de la matrice prolate généralisée.
 
-Le dépôt introduit donc comme **coordonnée expérimentale**
+Résultats actuellement établis à dimension finie dans le banc :
 
-```text
-R_pi(sigma) = pi^(-sigma/2)
-```
+- formule fermée de `K'(0)` dérivée du coefficient publié ;
+- lemme de signe fini : toutes les dérivées de croisement `W+` sont négatives et toutes les `W-` positives ;
+- validation dense ↔ EVD tridiagonale ;
+- reproduction Rust directe jusqu'à `m=4096` ;
+- calcul eigenvalues-only à haute dimension avec contrôle explicite de l'annulation numérique ;
+- checkpoints homogènes validés jusqu'à `m=16384` pour la variation totale de premier ordre ;
+- signal numérique robuste compatible avec une croissance quadratique en `log m`, avec corrections de taille finie encore non dérivées analytiquement.
 
-et sa version normalisée sur la ligne critique
+Documentation Phase 4 :
 
-```text
-rho(sigma) = R_pi(sigma) / R_pi(1/2)
-           = pi^((1 - 2 sigma)/4).
-```
+- [`docs/PHASE4_SEMILOCAL_FINDINGS.md`](docs/PHASE4_SEMILOCAL_FINDINGS.md)
+- [`docs/PHASE4_FIRST_ORDER_DERIVATION.md`](docs/PHASE4_FIRST_ORDER_DERIVATION.md)
+- [`docs/PHASE4_FIRST_ORDER_SIGN_LEMMA.md`](docs/PHASE4_FIRST_ORDER_SIGN_LEMMA.md)
+- [`docs/PHASE4_RUST_VALIDATION_2026-08-14.md`](docs/PHASE4_RUST_VALIDATION_2026-08-14.md)
+- [`docs/PHASE4_NUMERICAL_CHECKPOINTS_2026-08-15.md`](docs/PHASE4_NUMERICAL_CHECKPOINTS_2026-08-15.md)
 
-Cette définition donne exactement
+## Checkpoints numériques actuels
 
-```text
-rho(1/2) = 1
-rho(1 - sigma) = 1 / rho(sigma)
-log rho(1 - sigma) = -log rho(sigma).
-```
-
-**Important :** interpréter `R_pi` ou `rho` comme un rayon géométrique ou physique est une hypothèse de travail du banc, pas un résultat connu sur les zéros de zeta.
-
-## Pourquoi ne pas utiliser une simple matrice de Gram ?
-
-Une matrice de la forme
+Pour
 
 ```text
-G_ij = integral phi_i(t) conjugate(phi_j(t)) dt
+S(m) = sum_j |lambda'_j(0)|,
 ```
 
-est positive semi-définie par construction, puisque pour tout vecteur `c`,
+les checkpoints Rust retenus sont :
+
+| m | S(m) |
+|---:|---:|
+| 128 | 3.970845543531 |
+| 256 | 4.640481894221 |
+| 512 | 5.359223651882 |
+| 1024 | 6.126883687871 |
+| 2048 | 6.943355708182 |
+| 4096 | 7.808580171428 |
+| 8192 | 8.72252476599664 |
+| 16384 | 9.68517075774107 |
+
+Les deux derniers points utilisent une différence finie mode-par-mode des valeurs propres, avec validation indépendante à l'intérieur de la fenêtre de pas stable. Les extrapolations contaminées par l'annulation numérique sont explicitement rejetées dans la documentation.
+
+Le coefficient centré
 
 ```text
-c* G c = integral |sum_i c_i phi_i(t)|^2 dt >= 0.
+A_m = [S(2m) - 2S(m) + S(m/2)] / [2(log 2)^2]
 ```
 
-La positivité d'une telle matrice ne peut donc pas, à elle seule, distinguer `sigma = 1/2` de `sigma != 1/2`. Le banc évitera de confondre un échec numérique de Cholesky avec une propriété de la fonction zeta.
+donne à présent
 
-## Direction N-dimensionnelle
+```text
+A_4096 = 0.05070228504273...
+A_8192 = 0.05068278870666...
+```
 
-La cible du projet est une suite de modèles finis `E_N` dont la dimension augmente, avec une forme quadratique ou un opérateur dont la positivité n'est **pas automatique**.
+La constante `1/(2*pi^2) = 0.05066059182116...` est une **cible numérique candidate seulement**. L'écart fini observé est compatible avec une correction approximativement proportionnelle à `log(m)/m`; cela doit encore être dérivé analytiquement.
 
-Une direction documentée est la positivité de Weil et ses formulations spectrales. Connes et Consani étudient précisément une interprétation hilbertienne de cette positivité :
+## Prochaine cible
 
-- Alain Connes, Caterina Consani, *Weil positivity and Trace formula, the archimedean place* (2020): https://arxiv.org/abs/2006.13771
-- Alain Connes, *The Riemann Hypothesis: Past, Present and a Letter Through Time* (2026): https://arxiv.org/abs/2602.04022
+La priorité n'est plus d'augmenter aveuglément la taille des matrices. Le prochain objectif est d'exploiter l'identité de trace finie
 
-Ces références orientent la phase N-dimensionnelle ; elles ne valident pas notre interprétation radiale.
+```text
+d/dq Tr sqrt(K(q)) |_{q=0}
+  = (1/2) Tr(K(0)^(-1/2) K'(0))
+```
 
-## Feuille de route
+et les coefficients tridiagonaux explicites de `K(0)` et `K'(0)` pour obtenir une asymptotique analytique de `S(m)`.
 
-### Phase 0 — invariants élémentaires
+## Références principales
 
-- [x] représentation de `s = sigma + i t`
-- [x] réflexion fonctionnelle `s -> 1 - s`
-- [x] réflexion géométrique autour de `Re(s)=1/2`
-- [x] coordonnée radiale `R_pi`
-- [x] coordonnée normalisée `rho`
-- [x] tests d'involution et de réciprocité
-
-### Phase 1 — évaluation numérique contrôlée
-
-- [ ] implémentation de `zeta(s)` avec plusieurs régimes numériques
-- [ ] implémentation de `xi(s)`
-- [ ] tests de l'équation fonctionnelle
-- [ ] contrôle d'erreur et précision arbitraire pour les validations sensibles
-- [ ] comparaison à des valeurs de référence indépendantes
-
-### Phase 2 — espace N-dimensionnel
-
-- [ ] définir explicitement la base de fonctions tests `E_N`
-- [ ] construire une forme quadratique non trivialement positive
-- [ ] calculer valeurs propres / LDL^T sans inverser explicitement les matrices
-- [ ] suivre la plus petite valeur propre quand `N` augmente
-- [ ] tester la stabilité par changement de base et de précision
-
-### Phase 3 — géométrie radiale expérimentale
-
-- [ ] comparer la coordonnée `rho` aux observables de la forme quadratique
-- [ ] tester si elle apporte une information indépendante ou seulement un changement de variable
-- [ ] rejeter le modèle radial s'il ne produit aucun invariant nouveau
-
-### Phase 4 — calcul haute performance
-
-Cible principale : machine ARM64 `aarch64`, 14 CPU, 122 GiB RAM, SIMD Advanced SIMD + SVE/SVE2.
-
-L'optimisation ne sera entreprise qu'après validation mathématique du noyau numérique.
+- Alain Connes, Caterina Consani, Henri Moscovici, *On q-series and the moment problem associated to local factors*, arXiv:2403.01247.
+- Alain Connes, Caterina Consani, Henri Moscovici, *Zeta zeros and prolate wave operators*, arXiv:2310.18423.
+- Alain Connes, Caterina Consani, *Weil positivity and Trace formula, the archimedean place*, arXiv:2006.13771.
 
 ## Principe du projet
 
-Un phénomène numérique n'est jamais considéré comme une preuve. Toute signature observée doit survivre :
+Un phénomène numérique n'est jamais considéré comme une preuve. Toute signature observée doit, autant que possible, survivre :
 
-- à l'augmentation de `N` ;
+- à l'augmentation de la dimension ;
 - à l'augmentation de la précision ;
 - au changement de discrétisation ;
-- au changement de base ;
+- au changement de méthode de sommation ;
 - à une implémentation ou référence indépendante.
