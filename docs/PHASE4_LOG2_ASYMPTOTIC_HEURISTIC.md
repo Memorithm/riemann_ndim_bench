@@ -294,35 +294,42 @@ while
  = 0.0506605918211689...
 ```
 
-The finite-size gap remains resolved numerically and should not be suppressed by fitting. The quantity
-
-```text
-m * [A_m - 1/(2*pi^2)] / log(m)
-```
-
-stays near `0.0202` over the validated range, suggesting a next correction compatible with
+The first finite-size correction is now derived separately in
+[`PHASE4_FIRST_FINITE_SIZE_CORRECTION.md`](PHASE4_FIRST_FINITE_SIZE_CORRECTION.md).
+At the formal row-symbol level it predicts
 
 ```text
 A_m
  = 1/(2*pi^2)
-   + [c log m + d]/m
-   + ...
+   + [c_A log m + d]/m
+   + ...,
+
+c_A
+ = 3/[32*pi^2*(log 2)^2]
+ = 0.01977063457049387...
 ```
 
-but this next term is not derived here.
+without fitting the global `S(m)` data. The homogeneous `m=8192` checkpoint gives
+
+```text
+m*(A_m-A)/log(m)
+ = 0.02017962874379530,
+```
+
+which is about `2.07%` above the prediction.
 
 ## 7. What remains to prove
 
-The coefficient `1/(2*pi^2)` above follows formally from exact leading coefficients, but a proof requires uniform control of the singular trace near `theta=0`. In particular one needs to justify:
+The coefficient `1/(2*pi^2)` and the first `log(m)/m` correction above follow formally from exact row coefficients, but a proof requires uniform control of the singular trace near `theta=0`. In particular one needs to justify:
 
 1. replacement of the finite slowly varying tridiagonal matrices by the local symbol in a trace involving the singular function `x -> x^(-1/2)`;
 2. uniform treatment of the soft-edge region where `k(i,theta)` is of order `1/i`;
 3. summability of the errors after the `i`-sum;
 4. parity-boundary contributions and the first finitely many rows;
-5. the next-order term responsible for the observed `log(m)/m` correction in `A_m`.
+5. the non-logarithmic `1/m` term and subsequent corrections.
 
 A generalized locally Toeplitz / discrete Sturm-Liouville approach is a plausible framework, but ordinary bounded continuous test-function spectral distribution results are not by themselves sufficient because `x^(-1/2)` is singular at the soft edge.
 
 ## Scientific boundary
 
-This derivation concerns only the large-block asymptotics of a finite semilocal first-order prolate perturbation. Even if the asymptotic coefficient is proved, that would not identify the finite crossings with zeta zeros and would not prove the Riemann hypothesis.
+This derivation concerns only the large-block asymptotics of a finite semilocal first-order prolate perturbation. Even if the asymptotic coefficients are proved, that would not identify the finite crossings with zeta zeros and would not prove the Riemann hypothesis.
