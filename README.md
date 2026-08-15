@@ -52,6 +52,7 @@ Documentation Phase 4 :
 - [`docs/PHASE4_FIRST_ORDER_SIGN_LEMMA.md`](docs/PHASE4_FIRST_ORDER_SIGN_LEMMA.md)
 - [`docs/PHASE4_RUST_VALIDATION_2026-08-14.md`](docs/PHASE4_RUST_VALIDATION_2026-08-14.md)
 - [`docs/PHASE4_NUMERICAL_CHECKPOINTS_2026-08-15.md`](docs/PHASE4_NUMERICAL_CHECKPOINTS_2026-08-15.md)
+- [`docs/PHASE4_LOCAL_IMPLEMENTATION_MANIFEST.md`](docs/PHASE4_LOCAL_IMPLEMENTATION_MANIFEST.md) — inventaire du code Phase 4 validé sur Thor mais pas encore upstreamé proprement.
 
 ## Checkpoints numériques actuels
 
