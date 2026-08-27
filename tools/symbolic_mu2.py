@@ -2,8 +2,9 @@
 """Exact symbolic helpers for the post-perturbative mu^2 derivation chain.
 
 The tool accepts only small whitelisted expression grammars. It is designed to
-verify an agent's proposed hypergeometric structure and local finite-part
-algebra; no benchmark-specific limiting constant is encoded here.
+verify recurrence-derived forcing quotients, proposed hypergeometric structure,
+and local finite-part algebra; no benchmark-specific limiting constant is
+encoded here.
 """
 
 from __future__ import annotations
@@ -41,7 +42,7 @@ def to_sympy(value: Fraction) -> sp.Rational:
 def safe_expr(
     text: str,
     *,
-    names: dict[str, sp.Symbol],
+    names: dict[str, sp.Expr],
     allow_sqrt: bool = False,
 ) -> sp.Expr:
     """Parse an exact expression without sympify/eval on user text."""
@@ -106,6 +107,92 @@ def safe_expr(
 
 def expr_text(expr: sp.Expr) -> str:
     return sp.sstr(sp.factor(expr))
+
+
+# ---------------------------------------------------------------------------
+# Variation-of-constants forcing provenance
+# ---------------------------------------------------------------------------
+
+
+def forcing_ratio_report(
+    a_text: str,
+    b_text: str,
+    forcing_text: str,
+    offset_text: str,
+    candidate_ratio_text: str,
+) -> None:
+    """Derive the normalized forcing quotient directly from A, B and F.
+
+    For
+
+        A_n * Delta[n+1] - B_n * Delta[n] = F_n
+
+    let ``h`` be a homogeneous increment with
+
+        h[n+1] / h[n] = B_n / A_n.
+
+    The variation-of-constants forcing is
+
+        T_n = F_n / (A_n * h[n+1]).
+
+    Therefore its quotient is independent of the unknown normalization of h:
+
+        T[n+1] / T[n] = F[n+1] * A[n] / (F[n] * B[n+1]).
+
+    ``j = n + offset`` is substituted exactly before comparison with the
+    proposed rational quotient.
+    """
+
+    n = sp.Symbol("n", integer=True, nonnegative=True)
+    j = sp.Symbol("j")
+    offset = to_sympy(parse_fraction(offset_text))
+
+    a_expr = safe_expr(a_text, names={"j": j})
+    b_expr = safe_expr(b_text, names={"j": j})
+    forcing_expr = safe_expr(forcing_text, names={"j": j, "n": n})
+    candidate = safe_expr(candidate_ratio_text, names={"n": n})
+
+    j_n = n + offset
+    j_next = n + 1 + offset
+
+    a_n = sp.factor(sp.cancel(a_expr.subs(j, j_n)))
+    b_next = sp.factor(sp.cancel(b_expr.subs(j, j_next)))
+    f_n = sp.factor(
+        sp.cancel(forcing_expr.subs({j: j_n, n: n}, simultaneous=True))
+    )
+    f_next = sp.factor(
+        sp.cancel(
+            forcing_expr.subs(
+                {j: j_next, n: n + 1},
+                simultaneous=True,
+            )
+        )
+    )
+
+    if f_n == 0 or b_next == 0:
+        raise ValueError("forcing quotient is identically singular")
+
+    derived = sp.factor(sp.cancel(f_next * a_n / (f_n * b_next)))
+    difference = sp.factor(sp.cancel(candidate - derived))
+    matches = difference == 0
+
+    print("mode=forcing_ratio")
+    print("recurrence=A_n*Delta[n+1]-B_n*Delta[n]=F_n")
+    print("homogeneous_ratio=h[n+1]/h[n]=B_n/A_n")
+    print("variation_forcing=T_n=F_n/(A_n*h[n+1])")
+    print("quotient_identity=T[n+1]/T[n]=F[n+1]*A[n]/(F[n]*B[n+1])")
+    print(f"A={sp.sstr(a_expr)}")
+    print(f"B={sp.sstr(b_expr)}")
+    print(f"F={sp.sstr(forcing_expr)}")
+    print(f"site_relation=j=n+{sp.sstr(offset)}")
+    print(f"derived_ratio={sp.sstr(derived)}")
+    print(f"candidate_ratio={sp.sstr(candidate)}")
+    print(f"candidate_difference={sp.sstr(difference)}")
+    print("candidate_status=" + ("PROVED_EQUAL" if matches else "MISMATCH"))
+    if matches:
+        print("exact_status=PROVED_BY_VARIATION_OF_CONSTANTS_QUOTIENT")
+    else:
+        print("exact_status=REFUTED_FORCING_QUOTIENT")
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +379,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Exact symbolic mu^2 verifier")
     sub = parser.add_subparsers(dest="mode", required=True)
 
+    forcing = sub.add_parser("forcing-ratio")
+    forcing.add_argument("--A", required=True)
+    forcing.add_argument("--B", required=True)
+    forcing.add_argument("--forcing", required=True)
+    forcing.add_argument("--offset", required=True)
+    forcing.add_argument("--candidate-ratio", required=True)
+
     hyper = sub.add_parser("hypergeometric")
     hyper.add_argument("--numerator-shifts", required=True)
     hyper.add_argument("--denominator-shifts", required=True)
@@ -310,7 +404,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    if args.mode == "hypergeometric":
+    if args.mode == "forcing-ratio":
+        forcing_ratio_report(
+            args.A,
+            args.B,
+            args.forcing,
+            args.offset,
+            args.candidate_ratio,
+        )
+    elif args.mode == "hypergeometric":
         hypergeometric_report(
             args.numerator_shifts,
             args.denominator_shifts,

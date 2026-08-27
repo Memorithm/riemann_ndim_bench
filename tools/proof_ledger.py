@@ -66,10 +66,12 @@ class ProofLedger:
         )
 
     def has_exact_symbolic_mu2_chain(self) -> bool:
-        """Return true only when both post-perturbative exact stages succeeded."""
-        return self.has_exact_success(
-            "symbolic_hypergeometric"
-        ) and self.has_exact_success("symbolic_finite_part")
+        """Return true only when all post-perturbative exact stages succeeded."""
+        return (
+            self.has_exact_success("symbolic_forcing_ratio")
+            and self.has_exact_success("symbolic_hypergeometric")
+            and self.has_exact_success("symbolic_finite_part")
+        )
 
     def unresolved_gamma_seen(self) -> bool:
         return any(
@@ -124,7 +126,8 @@ class ProofLedger:
         if require_symbolic_mu2_chain and not self.has_exact_symbolic_mu2_chain():
             failures.append(
                 "the exact post-perturbative symbolic mu2 chain is incomplete: "
-                "both symbolic_hypergeometric and symbolic_finite_part must succeed"
+                "symbolic_forcing_ratio, symbolic_hypergeometric and "
+                "symbolic_finite_part must all succeed"
             )
 
         return failures
@@ -146,6 +149,12 @@ class ProofLedger:
                 )
             elif record.mode == "gamma_quotient":
                 detail = f" exact_status={record.fields.get('exact_status', 'unknown')}"
+            elif record.mode == "symbolic_forcing_ratio":
+                detail = (
+                    f" candidate_status={record.fields.get('candidate_status', 'unknown')}"
+                    f" ratio={record.fields.get('derived_ratio', 'unknown')}"
+                    f" exact_status={record.fields.get('exact_status', 'unknown')}"
+                )
             elif record.mode == "symbolic_hypergeometric":
                 detail = (
                     f" candidate_status={record.fields.get('candidate_status', 'unknown')}"
