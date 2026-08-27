@@ -256,18 +256,12 @@ class SymbolicMu2Tests(unittest.TestCase):
     def test_mu2_exact_component_assembly_proves_closed_form(self) -> None:
         result = run_symbolic(
             "assembly",
-            "--h-plus",
-            "3*sqrt(2*pi)/16",
-            "--h-minus",
-            "15*sqrt(2*pi)/32",
-            "--c-plus",
-            "-sqrt(2)/9",
-            "--c-minus",
-            "2*sqrt(2)/45",
-            "--combination",
-            "2*(Hm*cm-Hp*cp)",
-            "--candidate",
-            "sqrt(pi)/6",
+            "--h-plus=3*sqrt(2*pi)/16",
+            "--h-minus=15*sqrt(2*pi)/32",
+            "--c-plus=-sqrt(2)/9",
+            "--c-minus=2*sqrt(2)/45",
+            "--combination=2*(Hm*cm-Hp*cp)",
+            "--candidate=sqrt(pi)/6",
         )
         self.assertIn("h_plus_times_c_plus=-sqrt(pi)/24", result.stdout)
         self.assertIn("h_minus_times_c_minus=sqrt(pi)/24", result.stdout)
@@ -282,18 +276,12 @@ class SymbolicMu2Tests(unittest.TestCase):
     def test_mu2_exact_component_assembly_refutes_wrong_closed_form(self) -> None:
         result = run_symbolic(
             "assembly",
-            "--h-plus",
-            "3*sqrt(2*pi)/16",
-            "--h-minus",
-            "15*sqrt(2*pi)/32",
-            "--c-plus",
-            "-sqrt(2)/9",
-            "--c-minus",
-            "2*sqrt(2)/45",
-            "--combination",
-            "2*(Hm*cm-Hp*cp)",
-            "--candidate",
-            "sqrt(pi)/5",
+            "--h-plus=3*sqrt(2*pi)/16",
+            "--h-minus=15*sqrt(2*pi)/32",
+            "--c-plus=-sqrt(2)/9",
+            "--c-minus=2*sqrt(2)/45",
+            "--combination=2*(Hm*cm-Hp*cp)",
+            "--candidate=sqrt(pi)/5",
         )
         self.assertIn("candidate_status=MISMATCH", result.stdout)
         self.assertIn("exact_status=REFUTED_COMPONENT_ASSEMBLY", result.stdout)
