@@ -23,6 +23,77 @@ def run_symbolic(*args: str, check: bool = True) -> subprocess.CompletedProcess[
 
 
 class SymbolicMu2Tests(unittest.TestCase):
+    def test_plus_variation_forcing_ratio_is_derived_exactly(self) -> None:
+        candidate = (
+            "((4*n+1)*(4*n+3)*(8*n+9))"
+            "/(8*n*(2*n+1)*(8*n+1))"
+        )
+        result = run_symbolic(
+            "forcing-ratio",
+            "--A",
+            "4*j**2+3*j+5/16",
+            "--B",
+            "4*j**2-3*j+5/16",
+            "--forcing",
+            "(32/3)*j*n",
+            "--offset",
+            "1/8",
+            "--candidate-ratio",
+            candidate,
+        )
+        self.assertIn("candidate_difference=0", result.stdout)
+        self.assertIn("candidate_status=PROVED_EQUAL", result.stdout)
+        self.assertIn(
+            "exact_status=PROVED_BY_VARIATION_OF_CONSTANTS_QUOTIENT",
+            result.stdout,
+        )
+
+    def test_minus_variation_forcing_ratio_is_derived_exactly(self) -> None:
+        candidate = (
+            "((4*n+3)*(4*n+5)*(8*n+13))"
+            "/(8*n*(2*n+3)*(8*n+5))"
+        )
+        result = run_symbolic(
+            "forcing-ratio",
+            "--A",
+            "4*j**2+3*j+5/16",
+            "--B",
+            "4*j**2-3*j+5/16",
+            "--forcing",
+            "(32/3)*j*n",
+            "--offset",
+            "5/8",
+            "--candidate-ratio",
+            candidate,
+        )
+        self.assertIn("candidate_difference=0", result.stdout)
+        self.assertIn("candidate_status=PROVED_EQUAL", result.stdout)
+        self.assertIn(
+            "exact_status=PROVED_BY_VARIATION_OF_CONSTANTS_QUOTIENT",
+            result.stdout,
+        )
+
+    def test_wrong_variation_forcing_ratio_is_refuted(self) -> None:
+        result = run_symbolic(
+            "forcing-ratio",
+            "--A",
+            "4*j**2+3*j+5/16",
+            "--B",
+            "4*j**2-3*j+5/16",
+            "--forcing",
+            "(32/3)*j*n",
+            "--offset",
+            "1/8",
+            "--candidate-ratio",
+            "(n+1)/(n+2)",
+        )
+        self.assertIn("candidate_status=MISMATCH", result.stdout)
+        self.assertIn("exact_status=REFUTED_FORCING_QUOTIENT", result.stdout)
+        self.assertNotIn(
+            "exact_status=PROVED_BY_VARIATION_OF_CONSTANTS_QUOTIENT",
+            result.stdout,
+        )
+
     def test_hypergeometric_ratio_and_terms_are_exact(self) -> None:
         result = run_symbolic(
             "hypergeometric",
