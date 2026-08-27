@@ -56,6 +56,19 @@ fn pairwise_quadratic_extrapolation_matches_exact_first_order_total_variation() 
 }
 
 #[test]
+fn pairwise_m1024_reproduces_documented_exact_first_order_checkpoint() {
+    let diagnostic = pairwise_total_variation_extrapolation(1024, 5.0e-4).unwrap();
+
+    assert_close_scaled(
+        diagnostic.quadratic_h2_h4,
+        6.126883687871,
+        0.0,
+        5e-8,
+        "m=1024 pairwise extrapolated total variation",
+    );
+}
+
+#[test]
 fn pairwise_trace_preserves_parity_signs() {
     for block_size in [8_usize, 32, 128] {
         let plus = pairwise_first_order_trace_derivative(block_size, ProlateParity::WPlus, 2.5e-4)
