@@ -129,6 +129,21 @@ class ProofLedgerTests(unittest.TestCase):
         self.assertEqual(record.status, EvidenceStatus.REFUTED)
         self.assertFalse(ledger.has_exact_success("symbolic_forcing_ratio"))
 
+    def test_component_assembly_mismatch_is_refuted(self) -> None:
+        ledger = ProofLedger()
+        record = ledger.add_verifier_output(
+            "symbolic_assembly",
+            "\n".join(
+                [
+                    "assembled_value=sqrt(pi)/6",
+                    "candidate_status=MISMATCH",
+                    "exact_status=REFUTED_COMPONENT_ASSEMBLY",
+                ]
+            ),
+        )
+        self.assertEqual(record.status, EvidenceStatus.REFUTED)
+        self.assertFalse(ledger.has_exact_success("symbolic_assembly"))
+
     def test_complete_symbolic_chain_satisfies_exact_gate(self) -> None:
         ledger = ProofLedger()
         ledger.add_verifier_output(
@@ -159,6 +174,16 @@ class ProofLedgerTests(unittest.TestCase):
                 ]
             ),
         )
+        ledger.add_verifier_output(
+            "symbolic_assembly",
+            "\n".join(
+                [
+                    "assembled_value=sqrt(pi)/6",
+                    "candidate_status=PROVED_EQUAL",
+                    "exact_status=PROVED_BY_EXACT_COMPONENT_ASSEMBLY",
+                ]
+            ),
+        )
         self.assertTrue(ledger.has_exact_symbolic_mu2_chain())
         self.assertEqual(
             ledger.gate_failures(
@@ -166,11 +191,13 @@ class ProofLedgerTests(unittest.TestCase):
                     "symbolic_forcing_ratio",
                     "symbolic_hypergeometric",
                     "symbolic_finite_part",
+                    "symbolic_assembly",
                 },
                 require_exact_modes={
                     "symbolic_forcing_ratio",
                     "symbolic_hypergeometric",
                     "symbolic_finite_part",
+                    "symbolic_assembly",
                 },
                 require_symbolic_mu2_chain=True,
             ),
@@ -187,11 +214,34 @@ class ProofLedgerTests(unittest.TestCase):
             "symbolic_finite_part",
             "finite_part=0\nexact_status=PROVED_BY_EXACT_THETA_ALGEBRA_AND_PUISEUX_SERIES",
         )
+        ledger.add_verifier_output(
+            "symbolic_assembly",
+            "assembled_value=0\ncandidate_status=PROVED_EQUAL\nexact_status=PROVED_BY_EXACT_COMPONENT_ASSEMBLY",
+        )
         self.assertFalse(ledger.has_exact_symbolic_mu2_chain())
         failures = ledger.gate_failures(require_symbolic_mu2_chain=True)
         self.assertEqual(len(failures), 1)
         self.assertIn("symbolic mu2 chain is incomplete", failures[0])
         self.assertIn("symbolic_forcing_ratio", failures[0])
+
+    def test_chain_without_final_assembly_fails_closed(self) -> None:
+        ledger = ProofLedger()
+        ledger.add_verifier_output(
+            "symbolic_forcing_ratio",
+            "candidate_status=PROVED_EQUAL\nexact_status=PROVED_BY_VARIATION_OF_CONSTANTS_QUOTIENT",
+        )
+        ledger.add_verifier_output(
+            "symbolic_hypergeometric",
+            "candidate_status=PROVED_EQUAL\nexact_status=PROVED_BY_POCHHAMMER_QUOTIENT",
+        )
+        ledger.add_verifier_output(
+            "symbolic_finite_part",
+            "finite_part=0\nexact_status=PROVED_BY_EXACT_THETA_ALGEBRA_AND_PUISEUX_SERIES",
+        )
+        self.assertFalse(ledger.has_exact_symbolic_mu2_chain())
+        failures = ledger.gate_failures(require_symbolic_mu2_chain=True)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("symbolic_assembly", failures[0])
 
 
 if __name__ == "__main__":
