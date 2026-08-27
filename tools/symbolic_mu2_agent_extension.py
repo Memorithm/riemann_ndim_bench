@@ -17,6 +17,7 @@ SYMBOLIC_MODES = {
     "symbolic_forcing_ratio",
     "symbolic_hypergeometric",
     "symbolic_finite_part",
+    "symbolic_assembly",
 }
 
 
@@ -121,6 +122,29 @@ def install(base: ModuleType) -> None:
                 str(order),
             ]
 
+        elif mode == "symbolic_assembly":
+            h_plus = base.text_arg(args, "h_plus", max_len=2048)
+            h_minus = base.text_arg(args, "h_minus", max_len=2048)
+            c_plus = base.text_arg(args, "c_plus", max_len=2048)
+            c_minus = base.text_arg(args, "c_minus", max_len=2048)
+            combination = base.text_arg(args, "combination", max_len=4096)
+            candidate = base.text_arg(args, "candidate", max_len=2048)
+            argv += [
+                "assembly",
+                "--h-plus",
+                h_plus,
+                "--h-minus",
+                h_minus,
+                "--c-plus",
+                c_plus,
+                "--c-minus",
+                c_minus,
+                "--combination",
+                combination,
+                "--candidate",
+                candidate,
+            ]
+
         return base.run_process(argv, root, timeout=60)
 
     base.TOOL_IMPL["verify_math"] = extended_verify_math
@@ -143,6 +167,12 @@ def install(base: ModuleType) -> None:
             "theta_polynomial": {"type": "string"},
             "extra_expr": {"type": "string"},
             "order": {"type": "integer"},
+            "h_plus": {"type": "string"},
+            "h_minus": {"type": "string"},
+            "c_plus": {"type": "string"},
+            "c_minus": {"type": "string"},
+            "combination": {"type": "string"},
+            "candidate": {"type": "string"},
         }
     )
 
@@ -155,7 +185,10 @@ def install(base: ModuleType) -> None:
                 "symbolic_hypergeometric exactly checks a proposed "
                 "Pochhammer/hypergeometric coefficient quotient; "
                 "symbolic_finite_part exactly applies a theta polynomial and "
-                "extracts the x=sqrt(1-z) finite part by Puiseux expansion."
+                "extracts the x=sqrt(1-z) finite part by Puiseux expansion; "
+                "symbolic_assembly substitutes already-derived exact Gamma and "
+                "finite-part components into a proposed algebraic combination "
+                "and proves or refutes a supplied closed form."
             )
             break
 
@@ -175,6 +208,12 @@ def install(base: ModuleType) -> None:
     finite part in x=sqrt(1-z). This proves only the supplied symbolic
     expression; separately justify why that expression follows from the source
     recurrence and the verified forcing sequence.
+15. Before publishing a closed-form residual constant assembled from Gamma
+    normalizations and local finite parts, call verify_math symbolic_assembly
+    with the exact components, the algebraic combination that your derivation
+    requires, and your proposed closed form. A MISMATCH/REFUTED assembly is a
+    hard contradiction. Assembly proves only the stated combination of supplied
+    exact components; its provenance still depends on the preceding exact gates.
 """
 
     base._SYMBOLIC_MU2_EXTENSION_INSTALLED = True
