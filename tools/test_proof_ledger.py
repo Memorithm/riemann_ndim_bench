@@ -101,6 +101,66 @@ class ProofLedgerTests(unittest.TestCase):
         )
         self.assertEqual(len(failures), 3)
 
+    def test_symbolic_ratio_mismatch_is_refuted(self) -> None:
+        ledger = ProofLedger()
+        record = ledger.add_verifier_output(
+            "symbolic_hypergeometric",
+            "\n".join(
+                [
+                    "candidate_status=MISMATCH",
+                    "exact_status=REFUTED_CANDIDATE_RATIO",
+                ]
+            ),
+        )
+        self.assertEqual(record.status, EvidenceStatus.REFUTED)
+        self.assertFalse(ledger.has_exact_success("symbolic_hypergeometric"))
+
+    def test_complete_symbolic_chain_satisfies_exact_gate(self) -> None:
+        ledger = ProofLedger()
+        ledger.add_verifier_output(
+            "symbolic_hypergeometric",
+            "\n".join(
+                [
+                    "candidate_status=PROVED_EQUAL",
+                    "exact_status=PROVED_BY_POCHHAMMER_QUOTIENT",
+                ]
+            ),
+        )
+        ledger.add_verifier_output(
+            "symbolic_finite_part",
+            "\n".join(
+                [
+                    "finite_part=-sqrt(2)/9",
+                    "exact_status=PROVED_BY_EXACT_THETA_ALGEBRA_AND_PUISEUX_SERIES",
+                ]
+            ),
+        )
+        self.assertTrue(ledger.has_exact_symbolic_mu2_chain())
+        self.assertEqual(
+            ledger.gate_failures(
+                required_modes={
+                    "symbolic_hypergeometric",
+                    "symbolic_finite_part",
+                },
+                require_exact_modes={
+                    "symbolic_hypergeometric",
+                    "symbolic_finite_part",
+                },
+                require_symbolic_mu2_chain=True,
+            ),
+            [],
+        )
+
+    def test_incomplete_symbolic_chain_fails_closed(self) -> None:
+        ledger = ProofLedger()
+        ledger.add_verifier_output(
+            "symbolic_hypergeometric",
+            "candidate_status=PROVED_EQUAL\nexact_status=PROVED_BY_POCHHAMMER_QUOTIENT",
+        )
+        failures = ledger.gate_failures(require_symbolic_mu2_chain=True)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("symbolic mu2 chain is incomplete", failures[0])
+
 
 if __name__ == "__main__":
     unittest.main()
