@@ -1,4 +1,4 @@
-name: Rust CI
+name: CI
 
 on:
   push:
@@ -9,8 +9,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: rustc --version
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --all-targets --all-features -- -D warnings
-      - run: cargo test --all-targets
-      - run: cargo run --release
+
+      - name: Rust toolchain
+        run: rustc --version
+
+      - name: Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Rust lint
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Rust tests
+        run: cargo test --all-targets
+
+      - name: Rust release smoke test
+        run: cargo run --release
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install research verifier dependencies
+        run: python -m pip install -r requirements-research.txt
+
+      - name: Compile research harness
+        run: python -m py_compile tools/verify_math.py tools/test_verify_math.py
+
+      - name: Research verifier regression tests
+        run: python -m unittest -v tools/test_verify_math.py
