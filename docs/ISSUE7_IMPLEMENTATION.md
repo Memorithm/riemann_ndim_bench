@@ -22,7 +22,7 @@ and
   = -(1/sqrt(2))(2n+1)(4n+3) alpha_n.
 ```
 
-It builds both `K(0)` and `K'(0)` for `W+` and `W-`.  `K'(0)` is implemented twice: once from the unsimplified source-derived coefficient and once from the closed forms in `PHASE4_FIRST_ORDER_DERIVATION.md`, so the simplification can be regression-tested independently.
+It builds both `K(0)` and `K'(0)` for `W+` and `W-`. `K'(0)` is implemented twice: once from the unsimplified source-derived coefficient and once from the closed forms in `PHASE4_FIRST_ORDER_DERIVATION.md`, so the simplification can be regression-tested independently.
 
 The crossing derivatives use `faer::linalg::solvers::SelfAdjointEigen` and the documented `U()` / `S()` decomposition factors:
 
@@ -44,11 +44,11 @@ lambda'_j(0) = mu'_j(0)/(2 lambda_j).
 - the documented `m=128` shape statistics;
 - an ignored expensive regression reproducing total response through `m=1024`.
 
-The expensive test is intentionally ignored in the default suite because this implementation uses the dense `SelfAdjointEigen` path required by issue #7.  It remains available explicitly before promoting high-dimensional asymptotics.
+The expensive test is intentionally ignored in the default suite because this implementation uses the dense `SelfAdjointEigen` path required by issue #7. It remains available explicitly before promoting high-dimensional asymptotics.
 
 ## Independent reconstruction check
 
-The formulas in this branch were independently reconstructed outside the Rust implementation.  They reproduce, to floating-point precision, the historical targets recorded in the issue and Phase-4 notes, including
+The formulas in this branch were independently reconstructed outside the Rust implementation. They reproduce, to floating-point precision, the historical targets recorded in the issue and Phase-4 notes, including
 
 ```text
 m=16: m*mean_abs         = 0.28263208002937096
@@ -66,6 +66,8 @@ S(256) = 4.640481894221456
 
 ## Validation boundary
 
-GitHub Actions currently fails before repository steps are scheduled because of the pre-existing runner/billing state (`runner_id=0`, `steps=[]`).  Thor is also currently unavailable.  The branch has therefore been reviewed against the documented `faer 0.24.4` API and independently numerically reconstructed, but the repository Rust CI still needs to execute once a runner is available.
+GitHub Actions currently fails before repository steps are scheduled because of the pre-existing runner/billing state (`runner_id=0`, `steps=[]`). Thor is also currently unavailable. The branch has therefore been reviewed against the documented `faer 0.24.4` API and independently numerically reconstructed, but the repository Rust CI still needs to execute once a runner is available.
 
-This remains a finite-compression perturbation calculation.  It does not identify these crossings with zeta zeros and does not imply the Riemann hypothesis.
+The issue branch has been refreshed onto the `main` state that already contains PR #10, so it is intended to merge without dropping the verified research harness.
+
+This remains a finite-compression perturbation calculation. It does not identify these crossings with zeta zeros and does not imply the Riemann hypothesis.
