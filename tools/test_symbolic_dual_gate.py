@@ -41,20 +41,11 @@ class SymbolicDualGateTests(unittest.TestCase):
         )
         return ledger
 
-    def test_symbolic_modes_are_required(self) -> None:
-        self.assertIn("symbolic_hypergeometric", dual.FINAL_REQUIRED_MODES)
-        self.assertIn("symbolic_finite_part", dual.FINAL_REQUIRED_MODES)
-        self.assertIn("symbolic_hypergeometric", dual.FINAL_REQUIRED_EXACT_MODES)
-        self.assertIn("symbolic_finite_part", dual.FINAL_REQUIRED_EXACT_MODES)
-
-    def test_gate_rejects_missing_symbolic_chain(self) -> None:
-        failures = dual.final_gate_failures(self.base_final_ledger())
-        rendered = "\n".join(failures)
-        self.assertIn("symbolic_hypergeometric", rendered)
-        self.assertIn("symbolic_finite_part", rendered)
-
-    def test_gate_accepts_complete_exact_symbolic_chain(self) -> None:
-        ledger = self.base_final_ledger()
+    def add_exact_symbolic_chain(self, ledger: ProofLedger) -> None:
+        ledger.add_verifier_output(
+            "symbolic_forcing_ratio",
+            "candidate_status=PROVED_EQUAL\nexact_status=PROVED_BY_VARIATION_OF_CONSTANTS_QUOTIENT",
+        )
         ledger.add_verifier_output(
             "symbolic_hypergeometric",
             "candidate_status=PROVED_EQUAL\nexact_status=PROVED_BY_POCHHAMMER_QUOTIENT",
@@ -63,10 +54,53 @@ class SymbolicDualGateTests(unittest.TestCase):
             "symbolic_finite_part",
             "finite_part=0\nexact_status=PROVED_BY_EXACT_THETA_ALGEBRA_AND_PUISEUX_SERIES",
         )
-        self.assertEqual(dual.final_gate_failures(ledger), [])
 
-    def test_gate_rejects_refuted_symbolic_candidate(self) -> None:
+    def test_symbolic_modes_are_required(self) -> None:
+        self.assertIn("symbolic_forcing_ratio", dual.FINAL_REQUIRED_MODES)
+        self.assertIn("symbolic_hypergeometric", dual.FINAL_REQUIRED_MODES)
+        self.assertIn("symbolic_finite_part", dual.FINAL_REQUIRED_MODES)
+        self.assertIn("symbolic_forcing_ratio", dual.FINAL_REQUIRED_EXACT_MODES)
+        self.assertIn("symbolic_hypergeometric", dual.FINAL_REQUIRED_EXACT_MODES)
+        self.assertIn("symbolic_finite_part", dual.FINAL_REQUIRED_EXACT_MODES)
+
+    def test_gate_rejects_missing_symbolic_chain(self) -> None:
+        failures = dual.final_gate_failures(self.base_final_ledger())
+        rendered = "\n".join(failures)
+        self.assertIn("symbolic_forcing_ratio", rendered)
+        self.assertIn("symbolic_hypergeometric", rendered)
+        self.assertIn("symbolic_finite_part", rendered)
+
+    def test_gate_accepts_complete_exact_symbolic_chain(self) -> None:
         ledger = self.base_final_ledger()
+        self.add_exact_symbolic_chain(ledger)
+        self.assertEqual(dual.final_gate_failures(ledger), [])
+        self.assertTrue(ledger.has_exact_symbolic_mu2_chain())
+
+    def test_gate_rejects_refuted_forcing_provenance(self) -> None:
+        ledger = self.base_final_ledger()
+        ledger.add_verifier_output(
+            "symbolic_forcing_ratio",
+            "candidate_status=MISMATCH\nexact_status=REFUTED_FORCING_QUOTIENT",
+        )
+        ledger.add_verifier_output(
+            "symbolic_hypergeometric",
+            "candidate_status=PROVED_EQUAL\nexact_status=PROVED_BY_POCHHAMMER_QUOTIENT",
+        )
+        ledger.add_verifier_output(
+            "symbolic_finite_part",
+            "finite_part=0\nexact_status=PROVED_BY_EXACT_THETA_ALGEBRA_AND_PUISEUX_SERIES",
+        )
+        failures = dual.final_gate_failures(ledger)
+        self.assertTrue(
+            any("without an exact successful result" in failure for failure in failures)
+        )
+
+    def test_gate_rejects_refuted_hypergeometric_candidate(self) -> None:
+        ledger = self.base_final_ledger()
+        ledger.add_verifier_output(
+            "symbolic_forcing_ratio",
+            "candidate_status=PROVED_EQUAL\nexact_status=PROVED_BY_VARIATION_OF_CONSTANTS_QUOTIENT",
+        )
         ledger.add_verifier_output(
             "symbolic_hypergeometric",
             "candidate_status=MISMATCH\nexact_status=REFUTED_CANDIDATE_RATIO",
