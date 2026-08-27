@@ -47,6 +47,7 @@ jobs:
           tools/test_symbolic_mu2.py
           tools/test_proof_ledger.py
           tools/test_symbolic_agent_extension.py
+          tools/test_symbolic_dual_gate.py
 
       - name: Research harness regression tests
         run: >-
@@ -55,3 +56,4 @@ jobs:
           tools/test_symbolic_mu2.py
           tools/test_proof_ledger.py
           tools/test_symbolic_agent_extension.py
+          tools/test_symbolic_dual_gate.py
