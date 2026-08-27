@@ -27,6 +27,7 @@ class SymbolicAgentExtensionTests(unittest.TestCase):
         self.assertIn("symbolic_forcing_ratio", modes)
         self.assertIn("symbolic_hypergeometric", modes)
         self.assertIn("symbolic_finite_part", modes)
+        self.assertIn("symbolic_assembly", modes)
 
     def test_forcing_ratio_dispatch_proves_recurrence_derived_candidate(self) -> None:
         name, output = base.execute_tool(
@@ -153,6 +154,61 @@ class SymbolicAgentExtensionTests(unittest.TestCase):
             "exact_status=PROVED_BY_EXACT_THETA_ALGEBRA_AND_PUISEUX_SERIES",
             output,
         )
+
+    def test_assembly_dispatch_proves_exact_closed_form(self) -> None:
+        _, output = base.execute_tool(
+            ROOT,
+            {
+                "function": {
+                    "name": "verify_math",
+                    "arguments": {
+                        "mode": "symbolic_assembly",
+                        "h_plus": "3*sqrt(2*pi)/16",
+                        "h_minus": "15*sqrt(2*pi)/32",
+                        "c_plus": "-sqrt(2)/9",
+                        "c_minus": "2*sqrt(2)/45",
+                        "combination": "2*(Hm*cm-Hp*cp)",
+                        "candidate": "sqrt(pi)/6",
+                    },
+                }
+            },
+        )
+        self.assertIn("exit_status=0", output)
+        self.assertIn("h_plus_times_c_plus=-sqrt(pi)/24", output)
+        self.assertIn("h_minus_times_c_minus=sqrt(pi)/24", output)
+        self.assertIn("assembled_value=sqrt(pi)/6", output)
+        self.assertIn("candidate_status=PROVED_EQUAL", output)
+        self.assertIn("exact_status=PROVED_BY_EXACT_COMPONENT_ASSEMBLY", output)
+
+        ledger = ProofLedger()
+        record = ledger.add_verifier_output("symbolic_assembly", output)
+        self.assertEqual(record.status, EvidenceStatus.PROVED_EXACT)
+
+    def test_assembly_dispatch_refutes_wrong_closed_form(self) -> None:
+        _, output = base.execute_tool(
+            ROOT,
+            {
+                "function": {
+                    "name": "verify_math",
+                    "arguments": {
+                        "mode": "symbolic_assembly",
+                        "h_plus": "3*sqrt(2*pi)/16",
+                        "h_minus": "15*sqrt(2*pi)/32",
+                        "c_plus": "-sqrt(2)/9",
+                        "c_minus": "2*sqrt(2)/45",
+                        "combination": "2*(Hm*cm-Hp*cp)",
+                        "candidate": "sqrt(pi)/5",
+                    },
+                }
+            },
+        )
+        self.assertIn("candidate_status=MISMATCH", output)
+        self.assertIn("exact_status=REFUTED_COMPONENT_ASSEMBLY", output)
+
+        ledger = ProofLedger()
+        record = ledger.add_verifier_output("symbolic_assembly", output)
+        self.assertEqual(record.status, EvidenceStatus.REFUTED)
+        self.assertFalse(ledger.has_exact_success("symbolic_assembly"))
 
     def test_hypergeometric_requires_candidate_ratio(self) -> None:
         _, output = base.execute_tool(
