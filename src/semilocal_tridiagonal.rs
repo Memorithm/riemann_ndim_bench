@@ -90,7 +90,7 @@ pub fn crossing_derivatives_tridiagonal(
         eigenvalues.as_diagonal_mut(),
         Some(eigenvectors.as_mut()),
         Par::Seq,
-        &mut MemStack::new(&mut memory),
+        MemStack::new(&mut memory),
         params,
     )?;
 
