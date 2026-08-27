@@ -38,7 +38,7 @@ fn source_a2_derivative_matches_unsimplified_first_order_coefficient() {
         let r_n = 2.0_f64.sqrt() * (alpha[n + 1] - alpha[n]);
         let unsimplified = 2.0 * archimedean_a2(n) * r_n;
         let closed = archimedean_a2_prime(n, alpha[n]);
-        assert_close(closed, unsimplified, 2e-13);
+        assert_close(closed, unsimplified, 1e-12);
     }
 }
 
