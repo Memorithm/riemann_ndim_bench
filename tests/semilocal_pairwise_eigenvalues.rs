@@ -113,7 +113,13 @@ fn quadratic_even_power_extrapolation_eliminates_h2_and_h4_terms() {
 fn reproduces_documented_m8192_pairwise_checkpoint() {
     let diagnostic = pairwise_total_variation_extrapolation(8192, 5.0e-4).unwrap();
 
-    assert_close_scaled(diagnostic.d_h, 8.722779121464640, 0.0, 5e-9, "m=8192 D(h)");
+    assert_close_scaled(
+        diagnostic.d_h,
+        8.722_779_121_464_64,
+        0.0,
+        5e-9,
+        "m=8192 D(h)",
+    );
     assert_close_scaled(
         diagnostic.d_h2,
         8.722587591872799,
@@ -145,7 +151,7 @@ fn reproduces_documented_m16384_pairwise_checkpoint() {
     assert_close_scaled(diagnostic.d_h, 9.685679471063766, 0.0, 5e-9, "m=16384 D(h)");
     assert_close_scaled(
         diagnostic.d_h2,
-        9.685297949399001,
+        9.685_297_949_399,
         0.0,
         5e-9,
         "m=16384 D(h/2)",
