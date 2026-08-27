@@ -64,10 +64,6 @@ def install(base: ModuleType) -> None:
             ]
 
         elif mode == "symbolic_hypergeometric":
-            # A candidate ratio is mandatory here. Without it the symbolic
-            # helper can derive a Pochhammer quotient, but the agent gate must
-            # audit the agent's *proposed* quotient rather than merely prove
-            # that some supplied shifts define a hypergeometric sequence.
             numerator = base.text_arg(args, "numerator_shifts", max_len=1024)
             denominator = base.text_arg(args, "denominator_shifts", max_len=1024)
             base_value = base.text_arg(
@@ -129,20 +125,16 @@ def install(base: ModuleType) -> None:
             c_minus = base.text_arg(args, "c_minus", max_len=2048)
             combination = base.text_arg(args, "combination", max_len=4096)
             candidate = base.text_arg(args, "candidate", max_len=2048)
+            # Use --name=value so exact expressions beginning with '-' remain
+            # values rather than being interpreted by argparse as new options.
             argv += [
                 "assembly",
-                "--h-plus",
-                h_plus,
-                "--h-minus",
-                h_minus,
-                "--c-plus",
-                c_plus,
-                "--c-minus",
-                c_minus,
-                "--combination",
-                combination,
-                "--candidate",
-                candidate,
+                f"--h-plus={h_plus}",
+                f"--h-minus={h_minus}",
+                f"--c-plus={c_plus}",
+                f"--c-minus={c_minus}",
+                f"--combination={combination}",
+                f"--candidate={candidate}",
             ]
 
         return base.run_process(argv, root, timeout=60)
