@@ -24,8 +24,65 @@ class SymbolicAgentExtensionTests(unittest.TestCase):
 
     def test_modes_are_registered(self) -> None:
         modes = base.VERIFY_PROPERTIES["mode"]["enum"]
+        self.assertIn("symbolic_forcing_ratio", modes)
         self.assertIn("symbolic_hypergeometric", modes)
         self.assertIn("symbolic_finite_part", modes)
+
+    def test_forcing_ratio_dispatch_proves_recurrence_derived_candidate(self) -> None:
+        name, output = base.execute_tool(
+            ROOT,
+            {
+                "function": {
+                    "name": "verify_math",
+                    "arguments": {
+                        "mode": "symbolic_forcing_ratio",
+                        "A": "4*j**2+3*j+5/16",
+                        "B": "4*j**2-3*j+5/16",
+                        "forcing": "(32/3)*j*n",
+                        "offset": "1/8",
+                        "candidate_ratio": (
+                            "((4*n+1)*(4*n+3)*(8*n+9))"
+                            "/(8*n*(2*n+1)*(8*n+1))"
+                        ),
+                    },
+                }
+            },
+        )
+        self.assertEqual(name, "verify_math")
+        self.assertIn("exit_status=0", output)
+        self.assertIn("candidate_status=PROVED_EQUAL", output)
+        self.assertIn(
+            "exact_status=PROVED_BY_VARIATION_OF_CONSTANTS_QUOTIENT",
+            output,
+        )
+
+        ledger = ProofLedger()
+        record = ledger.add_verifier_output("symbolic_forcing_ratio", output)
+        self.assertEqual(record.status, EvidenceStatus.PROVED_EXACT)
+
+    def test_forcing_ratio_dispatch_refutes_wrong_candidate(self) -> None:
+        _, output = base.execute_tool(
+            ROOT,
+            {
+                "function": {
+                    "name": "verify_math",
+                    "arguments": {
+                        "mode": "symbolic_forcing_ratio",
+                        "A": "4*j**2+3*j+5/16",
+                        "B": "4*j**2-3*j+5/16",
+                        "forcing": "(32/3)*j*n",
+                        "offset": "1/8",
+                        "candidate_ratio": "(n+1)/(n+2)",
+                    },
+                }
+            },
+        )
+        self.assertIn("candidate_status=MISMATCH", output)
+        self.assertIn("exact_status=REFUTED_FORCING_QUOTIENT", output)
+
+        ledger = ProofLedger()
+        record = ledger.add_verifier_output("symbolic_forcing_ratio", output)
+        self.assertEqual(record.status, EvidenceStatus.REFUTED)
 
     def test_hypergeometric_dispatch_proves_exact_candidate(self) -> None:
         name, output = base.execute_tool(
