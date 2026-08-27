@@ -56,6 +56,33 @@ class ProofLedgerTests(unittest.TestCase):
         self.assertTrue(ledger.unresolved_gamma_seen())
         self.assertFalse(ledger.has_exact_success("gamma_quotient"))
 
+    def test_exact_mode_gate_rejects_unresolved_gamma(self) -> None:
+        ledger = ProofLedger()
+        ledger.add_verifier_output(
+            "gamma_quotient",
+            "exact_status=UNRESOLVED_GAMMA_BASES\nunresolved=Gamma(1/3)^-1",
+        )
+        failures = ledger.gate_failures(
+            required_modes={"gamma_quotient"},
+            require_exact_modes={"gamma_quotient"},
+        )
+        self.assertEqual(len(failures), 1)
+        self.assertIn("without an exact successful result", failures[0])
+
+    def test_exact_mode_gate_accepts_proved_gamma(self) -> None:
+        ledger = ProofLedger()
+        ledger.add_verifier_output(
+            "gamma_quotient",
+            "exact_status=PROVED_BY_GAMMA_RECURRENCE_AND_SPECIAL_IDENTITIES\nunresolved=none",
+        )
+        self.assertEqual(
+            ledger.gate_failures(
+                required_modes={"gamma_quotient"},
+                require_exact_modes={"gamma_quotient"},
+            ),
+            [],
+        )
+
     def test_asymptotic_best_power_is_preserved(self) -> None:
         ledger = ProofLedger()
         record = ledger.add_verifier_output(
