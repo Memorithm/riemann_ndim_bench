@@ -47,8 +47,8 @@ You are producing the final public synthesis of an adversarial mathematical
 experiment. Preserve unresolved gaps. The deterministic evidence ledger is
 binding: numerical/asymptotic evidence cannot be promoted to symbolic proof.
 For the blind mu^2 task, the final phase must independently execute the required
-verifier modes and pass the exact index-transform and perturbative gates before
-its report can be accepted.
+verifier modes and pass the exact index-transform, Gamma and perturbative gates
+before its report can be accepted.
 """.strip()
 
 
@@ -59,11 +59,25 @@ FINAL_REQUIRED_MODES = {
     "gamma_quotient",
 }
 
+FINAL_REQUIRED_EXACT_MODES = {
+    "recurrence_transform",
+    "gamma_quotient",
+}
+
 
 def append_jsonl(path: Path, record: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def final_gate_failures(ledger: ProofLedger) -> list[str]:
+    return ledger.gate_failures(
+        required_modes=FINAL_REQUIRED_MODES,
+        require_exact_modes=FINAL_REQUIRED_EXACT_MODES,
+        require_perturbative_success=True,
+        require_index_transform=True,
+    )
 
 
 def run_phase(
@@ -82,7 +96,8 @@ def run_phase(
         {"role": "user", "content": assignment},
     ]
     ledger = ProofLedger()
-    turn_limit = max_tool_turns + 4 if enforce_final_gate else max_tool_turns
+    final_audit_sent = False
+    turn_limit = max_tool_turns + 5 if enforce_final_gate else max_tool_turns
 
     print("\n" + "=" * 78)
     print(f"PHASE: {phase}")
@@ -138,11 +153,7 @@ def run_phase(
 
         if not calls:
             if enforce_final_gate:
-                failures = ledger.gate_failures(
-                    required_modes=FINAL_REQUIRED_MODES,
-                    require_perturbative_success=True,
-                    require_index_transform=True,
-                )
+                failures = final_gate_failures(ledger)
                 if failures:
                     gate = (
                         "VERIFICATION GATE REJECTED THIS DRAFT. Resolve all of "
@@ -167,35 +178,31 @@ def run_phase(
                     messages.append({"role": "user", "content": gate})
                     continue
 
-                if ledger.unresolved_gamma_seen():
-                    notice = (
-                        "Gamma verification still contains unresolved bases. "
-                        "Do not label those particular identities exact unless "
-                        "a later exact gamma_quotient call resolves them. Revise "
-                        "the report so the evidence classification matches the ledger."
+                if not final_audit_sent:
+                    final_audit_sent = True
+                    audit = (
+                        "FINAL EVIDENCE ATTESTATION. The gate now passes. Before "
+                        "the report can be accepted, revise it once against this "
+                        "machine ledger. Do not state a different finite-size "
+                        "best power than the ledger for the same data, do not "
+                        "describe numerical/asymptotic evidence as proof, and do "
+                        "not promote a Gamma identity that lacks an exact success.\n\n"
+                        + ledger.public_summary()
                     )
-                    print("\n--- GAMMA EVIDENCE NOTICE ---")
-                    print(notice)
-                    messages.append({"role": "user", "content": notice})
+                    print("\n--- FINAL EVIDENCE ATTESTATION ---")
+                    print(audit)
                     append_jsonl(
                         transcript,
                         {
-                            "event": "gamma_evidence_notice",
+                            "event": "final_evidence_attestation",
                             "phase": phase,
                             "turn": turn,
+                            "model": model,
                             "draft": content,
+                            "ledger": ledger.public_summary(),
                         },
                     )
-                    # Mark the notice once; a second draft may be accepted if no
-                    # new unresolved Gamma evidence is introduced.
-                    ledger.records = [
-                        record
-                        for record in ledger.records
-                        if not (
-                            record.mode == "gamma_quotient"
-                            and record.status.value == "unresolved"
-                        )
-                    ]
+                    messages.append({"role": "user", "content": audit})
                     continue
 
             print(f"\n--- PUBLIC REPORT: {phase} ---")
@@ -227,11 +234,7 @@ def run_phase(
                     ledger.add_verifier_output(mode, output)
 
     if enforce_final_gate:
-        failures = ledger.gate_failures(
-            required_modes=FINAL_REQUIRED_MODES,
-            require_perturbative_success=True,
-            require_index_transform=True,
-        )
+        failures = final_gate_failures(ledger)
         if failures:
             report = "VERIFICATION GATE FAILED: final synthesis withheld; " + "; ".join(failures)
             print("\n--- VERIFICATION GATE FAILURE ---")
@@ -248,8 +251,6 @@ def run_phase(
             )
             return report, ledger
 
-    # Tool budget was consumed but evidence requirements were met. Ask for a
-    # tool-free public synthesis rather than silently accepting the last tool turn.
     messages.append(
         {
             "role": "user",
