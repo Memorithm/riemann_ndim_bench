@@ -82,14 +82,26 @@ class ProofLedger:
         self,
         *,
         required_modes: set[str] | None = None,
+        require_exact_modes: set[str] | None = None,
         require_perturbative_success: bool = False,
         require_index_transform: bool = False,
     ) -> list[str]:
         failures: list[str] = []
         required_modes = required_modes or set()
+        require_exact_modes = require_exact_modes or set()
+
         missing = sorted(required_modes - self.modes_used())
         if missing:
             failures.append("missing verifier modes: " + ", ".join(missing))
+
+        non_exact = sorted(
+            mode for mode in require_exact_modes if not self.has_exact_success(mode)
+        )
+        if non_exact:
+            failures.append(
+                "verifier modes without an exact successful result: "
+                + ", ".join(non_exact)
+            )
 
         if require_perturbative_success and not self.has_successful_perturbative_extraction():
             failures.append(
