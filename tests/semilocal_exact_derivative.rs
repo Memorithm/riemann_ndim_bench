@@ -120,10 +120,9 @@ fn reproduces_independent_large_prime_regression_targets() {
 }
 
 #[test]
-fn reproduces_documented_m1024_shape_statistics() {
-    // Keep the normal test suite below the expensive m=1024 dense eigensolve.
-    // m=128 already exercises the full merged EVD/statistics path and catches
-    // normalization/ordering regressions.
+fn reproduces_documented_m128_shape_statistics() {
+    // m=128 exercises the full merged EVD/statistics path while keeping the
+    // default test suite below the expensive m=1024 dense eigensolve.
     let m = 128;
     let stats = merged_response_stats(m).unwrap();
     assert_close(m as f64 * stats.mean_abs, 0.1754882381797, 5e-11);
@@ -134,7 +133,7 @@ fn reproduces_documented_m1024_shape_statistics() {
 
 #[test]
 #[ignore = "expensive dense faer EVD; run before promoting high-m asymptotics"]
-fn reproduces_high_block_total_response_through_1024() {
+fn reproduces_high_block_total_response_and_signs_through_1024() {
     let targets = [
         (128, 3.970845543531),
         (256, 4.640481894221),
@@ -146,4 +145,9 @@ fn reproduces_high_block_total_response_through_1024() {
         let actual = merged_total_abs_derivative(m).unwrap();
         assert_close(actual, expected, 5e-9);
     }
+
+    let plus = crossing_derivatives(1024, ProlateParity::WPlus).unwrap();
+    let minus = crossing_derivatives(1024, ProlateParity::WMinus).unwrap();
+    assert!(plus.iter().all(|crossing| crossing.lambda_prime < 0.0));
+    assert!(minus.iter().all(|crossing| crossing.lambda_prime > 0.0));
 }
