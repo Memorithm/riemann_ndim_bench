@@ -65,6 +65,12 @@ class ProofLedger:
             for record in self.records
         )
 
+    def has_exact_symbolic_mu2_chain(self) -> bool:
+        """Return true only when both post-perturbative exact stages succeeded."""
+        return self.has_exact_success(
+            "symbolic_hypergeometric"
+        ) and self.has_exact_success("symbolic_finite_part")
+
     def unresolved_gamma_seen(self) -> bool:
         return any(
             record.mode == "gamma_quotient"
@@ -85,6 +91,7 @@ class ProofLedger:
         require_exact_modes: set[str] | None = None,
         require_perturbative_success: bool = False,
         require_index_transform: bool = False,
+        require_symbolic_mu2_chain: bool = False,
     ) -> list[str]:
         failures: list[str] = []
         required_modes = required_modes or set()
@@ -114,6 +121,12 @@ class ProofLedger:
                 "no recurrence_transform call exactly verified the index/sign normalization"
             )
 
+        if require_symbolic_mu2_chain and not self.has_exact_symbolic_mu2_chain():
+            failures.append(
+                "the exact post-perturbative symbolic mu2 chain is incomplete: "
+                "both symbolic_hypergeometric and symbolic_finite_part must succeed"
+            )
+
         return failures
 
     def public_summary(self) -> str:
@@ -133,6 +146,16 @@ class ProofLedger:
                 )
             elif record.mode == "gamma_quotient":
                 detail = f" exact_status={record.fields.get('exact_status', 'unknown')}"
+            elif record.mode == "symbolic_hypergeometric":
+                detail = (
+                    f" candidate_status={record.fields.get('candidate_status', 'unknown')}"
+                    f" exact_status={record.fields.get('exact_status', 'unknown')}"
+                )
+            elif record.mode == "symbolic_finite_part":
+                detail = (
+                    f" finite_part={record.fields.get('finite_part', 'unknown')}"
+                    f" exact_status={record.fields.get('exact_status', 'unknown')}"
+                )
             lines.append(
                 f"- {index}: mode={record.mode} status={record.status.value}{detail}"
             )
@@ -144,8 +167,12 @@ def classify_verifier_output(fields: dict[str, str], output: str) -> EvidenceSta
         return EvidenceStatus.REFUTED
     if fields.get("numeric_status") == "MISMATCH":
         return EvidenceStatus.REFUTED
+    if fields.get("candidate_status") == "MISMATCH":
+        return EvidenceStatus.REFUTED
 
     exact_status = fields.get("exact_status", "")
+    if exact_status.startswith("REFUTED_"):
+        return EvidenceStatus.REFUTED
     if exact_status.startswith("PROVED_"):
         return EvidenceStatus.PROVED_EXACT
     if exact_status == "UNRESOLVED_GAMMA_BASES":
