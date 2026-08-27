@@ -42,7 +42,7 @@ class SymbolicMu2Tests(unittest.TestCase):
         self.assertIn("candidate_status=PROVED_EQUAL", result.stdout)
         self.assertIn("exact_status=PROVED_BY_POCHHAMMER_QUOTIENT", result.stdout)
 
-    def test_hypergeometric_wrong_ratio_is_refuted(self) -> None:
+    def test_hypergeometric_wrong_ratio_is_refuted_fail_closed(self) -> None:
         result = run_symbolic(
             "hypergeometric",
             "--numerator-shifts",
@@ -54,6 +54,8 @@ class SymbolicMu2Tests(unittest.TestCase):
         )
         self.assertIn("candidate_status=MISMATCH", result.stdout)
         self.assertNotIn("candidate_difference=0\n", result.stdout)
+        self.assertIn("exact_status=REFUTED_CANDIDATE_RATIO", result.stdout)
+        self.assertNotIn("exact_status=PROVED_BY_POCHHAMMER_QUOTIENT", result.stdout)
 
     def test_hypergeometric_series_is_recognized(self) -> None:
         result = run_symbolic(
@@ -66,6 +68,28 @@ class SymbolicMu2Tests(unittest.TestCase):
             "1/4",
         )
         self.assertIn("hypergeometric_series=_2F_1", result.stdout)
+        self.assertIn("exact_status=PROVED_BY_POCHHAMMER_QUOTIENT", result.stdout)
+
+    def test_mu2_forcing_subsequence_a_k_is_exact_pochhammer_sequence(self) -> None:
+        result = run_symbolic(
+            "hypergeometric",
+            "--numerator-shifts",
+            "1/4,3/4",
+            "--denominator-shifts",
+            "1/2,1",
+            "--base",
+            "1",
+            "--candidate-ratio",
+            "((k+1/4)*(k+3/4))/((k+1/2)*(k+1))",
+            "--terms",
+            "6",
+        )
+        self.assertIn(
+            "first_terms=1,3/8,35/128,231/1024,6435/32768,46189/262144",
+            result.stdout,
+        )
+        self.assertIn("candidate_difference=0", result.stdout)
+        self.assertIn("hypergeometric_series=_2F_1([1/4,3/4];[1/2];1*z)", result.stdout)
         self.assertIn("exact_status=PROVED_BY_POCHHAMMER_QUOTIENT", result.stdout)
 
     def test_simple_puiseux_finite_part(self) -> None:
@@ -116,6 +140,47 @@ class SymbolicMu2Tests(unittest.TestCase):
         )
         self.assertIn("finite_part=sqrt(2)", result.stdout)
         self.assertIn("leading_power=0", result.stdout)
+
+    def test_mu2_plus_generating_finite_part_is_exact(self) -> None:
+        base = "(1/sqrt(1-sqrt(z))+1/sqrt(1+sqrt(z)))/2"
+        result = run_symbolic(
+            "finite-part",
+            "--base-expr",
+            base,
+            "--theta-polynomial",
+            "(16/9)*(8*k**2+k)",
+            "--extra-expr",
+            "0",
+            "--order",
+            "10",
+        )
+        self.assertIn("leading_power=-5", result.stdout)
+        self.assertIn("finite_part=-sqrt(2)/9", result.stdout)
+        self.assertIn(
+            "exact_status=PROVED_BY_EXACT_THETA_ALGEBRA_AND_PUISEUX_SERIES",
+            result.stdout,
+        )
+
+    def test_mu2_minus_generating_finite_part_is_exact(self) -> None:
+        base = "(1/sqrt(1-sqrt(z))+1/sqrt(1+sqrt(z)))/2"
+        extra = "(8/45)*(sqrt(1+sqrt(z))-sqrt(1-sqrt(z)))/sqrt(z)"
+        result = run_symbolic(
+            "finite-part",
+            "--base-expr",
+            base,
+            "--theta-polynomial",
+            "(16/45)*(16*k**2+6*k-1/2)",
+            "--extra-expr",
+            extra,
+            "--order",
+            "10",
+        )
+        self.assertIn("leading_power=-5", result.stdout)
+        self.assertIn("finite_part=2*sqrt(2)/45", result.stdout)
+        self.assertIn(
+            "exact_status=PROVED_BY_EXACT_THETA_ALGEBRA_AND_PUISEUX_SERIES",
+            result.stdout,
+        )
 
     def test_code_injection_is_rejected(self) -> None:
         result = run_symbolic(
