@@ -83,11 +83,7 @@ fn q(num: i128, den: i128) -> Q {
 }
 
 fn poly_sub(left: [Q; 3], right: [Q; 3]) -> [Q; 3] {
-    [
-        left[0] - right[0],
-        left[1] - right[1],
-        left[2] - right[2],
-    ]
+    [left[0] - right[0], left[1] - right[1], left[2] - right[2]]
 }
 
 fn poly_scale(poly: [Q; 3], factor: Q) -> [Q; 3] {
@@ -95,11 +91,7 @@ fn poly_scale(poly: [Q; 3], factor: Q) -> [Q; 3] {
 }
 
 fn poly_add(left: [Q; 3], right: [Q; 3]) -> [Q; 3] {
-    [
-        left[0] + right[0],
-        left[1] + right[1],
-        left[2] + right[2],
-    ]
+    [left[0] + right[0], left[1] + right[1], left[2] + right[2]]
 }
 
 fn universal_a_in_i(offset: Q) -> [Q; 3] {
@@ -178,7 +170,10 @@ fn exact_first_order_solution_forces_the_second_order_rhs() {
     let b = [q(5, 16), Q::integer(-3), Q::integer(4)];
     let d = [Q::integer(0), Q::integer(8), Q::integer(0)];
 
-    assert_eq!(poly_sub(a, b), [Q::integer(0), Q::integer(6), Q::integer(0)]);
+    assert_eq!(
+        poly_sub(a, b),
+        [Q::integer(0), Q::integer(6), Q::integer(0)]
+    );
 
     let first_order_step = q(-4, 3);
     let mu1_residual = poly_add(poly_scale(poly_sub(a, b), first_order_step), d);
