@@ -3,8 +3,8 @@
 
 The tool accepts only small whitelisted expression grammars. It is designed to
 verify recurrence-derived forcing quotients, proposed hypergeometric structure,
-and local finite-part algebra; no benchmark-specific limiting constant is
-encoded here.
+local finite-part algebra, and final component assembly; no benchmark-specific
+limiting constant is encoded here.
 """
 
 from __future__ import annotations
@@ -371,6 +371,77 @@ def finite_part_report(
 
 
 # ---------------------------------------------------------------------------
+# Exact component assembly
+# ---------------------------------------------------------------------------
+
+
+def assembly_report(
+    h_plus_text: str,
+    h_minus_text: str,
+    c_plus_text: str,
+    c_minus_text: str,
+    combination_text: str,
+    candidate_text: str,
+) -> None:
+    """Assemble already-derived exact components and audit a closed form.
+
+    The helper does not know what physical or mathematical role these
+    components play. It only substitutes four supplied exact values into a
+    supplied algebraic combination and proves or refutes equality with a
+    supplied candidate expression.
+    """
+
+    constants = {"pi": sp.pi}
+    h_plus = safe_expr(h_plus_text, names=constants, allow_sqrt=True)
+    h_minus = safe_expr(h_minus_text, names=constants, allow_sqrt=True)
+    c_plus = safe_expr(c_plus_text, names=constants, allow_sqrt=True)
+    c_minus = safe_expr(c_minus_text, names=constants, allow_sqrt=True)
+
+    hp_symbol, hm_symbol, cp_symbol, cm_symbol = sp.symbols("Hp Hm cp cm")
+    combination = safe_expr(
+        combination_text,
+        names={
+            "Hp": hp_symbol,
+            "Hm": hm_symbol,
+            "cp": cp_symbol,
+            "cm": cm_symbol,
+        },
+        allow_sqrt=True,
+    )
+    candidate = safe_expr(candidate_text, names=constants, allow_sqrt=True)
+
+    assembled = sp.simplify(
+        combination.subs(
+            {
+                hp_symbol: h_plus,
+                hm_symbol: h_minus,
+                cp_symbol: c_plus,
+                cm_symbol: c_minus,
+            }
+        )
+    )
+    difference = sp.simplify(sp.radsimp(assembled - candidate))
+    matches = difference == 0
+
+    print("mode=assembly")
+    print(f"h_plus={sp.sstr(h_plus)}")
+    print(f"h_minus={sp.sstr(h_minus)}")
+    print(f"c_plus={sp.sstr(c_plus)}")
+    print(f"c_minus={sp.sstr(c_minus)}")
+    print(f"h_plus_times_c_plus={sp.sstr(sp.simplify(h_plus * c_plus))}")
+    print(f"h_minus_times_c_minus={sp.sstr(sp.simplify(h_minus * c_minus))}")
+    print(f"combination={sp.sstr(combination)}")
+    print(f"assembled_value={sp.sstr(assembled)}")
+    print(f"candidate={sp.sstr(candidate)}")
+    print(f"candidate_difference={sp.sstr(difference)}")
+    print("candidate_status=" + ("PROVED_EQUAL" if matches else "MISMATCH"))
+    if matches:
+        print("exact_status=PROVED_BY_EXACT_COMPONENT_ASSEMBLY")
+    else:
+        print("exact_status=REFUTED_COMPONENT_ASSEMBLY")
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -399,6 +470,14 @@ def build_parser() -> argparse.ArgumentParser:
     finite.add_argument("--extra-expr", default="0")
     finite.add_argument("--order", type=int, default=10)
 
+    assembly = sub.add_parser("assembly")
+    assembly.add_argument("--h-plus", required=True)
+    assembly.add_argument("--h-minus", required=True)
+    assembly.add_argument("--c-plus", required=True)
+    assembly.add_argument("--c-minus", required=True)
+    assembly.add_argument("--combination", required=True)
+    assembly.add_argument("--candidate", required=True)
+
     return parser
 
 
@@ -426,6 +505,15 @@ def main() -> None:
             args.theta_polynomial,
             args.extra_expr,
             args.order,
+        )
+    elif args.mode == "assembly":
+        assembly_report(
+            args.h_plus,
+            args.h_minus,
+            args.c_plus,
+            args.c_minus,
+            args.combination,
+            args.candidate,
         )
     else:  # pragma: no cover
         raise RuntimeError(f"unhandled mode: {args.mode}")

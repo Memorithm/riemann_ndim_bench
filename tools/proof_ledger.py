@@ -71,6 +71,7 @@ class ProofLedger:
             self.has_exact_success("symbolic_forcing_ratio")
             and self.has_exact_success("symbolic_hypergeometric")
             and self.has_exact_success("symbolic_finite_part")
+            and self.has_exact_success("symbolic_assembly")
         )
 
     def unresolved_gamma_seen(self) -> bool:
@@ -126,8 +127,8 @@ class ProofLedger:
         if require_symbolic_mu2_chain and not self.has_exact_symbolic_mu2_chain():
             failures.append(
                 "the exact post-perturbative symbolic mu2 chain is incomplete: "
-                "symbolic_forcing_ratio, symbolic_hypergeometric and "
-                "symbolic_finite_part must all succeed"
+                "symbolic_forcing_ratio, symbolic_hypergeometric, "
+                "symbolic_finite_part and symbolic_assembly must all succeed"
             )
 
         return failures
@@ -163,6 +164,12 @@ class ProofLedger:
             elif record.mode == "symbolic_finite_part":
                 detail = (
                     f" finite_part={record.fields.get('finite_part', 'unknown')}"
+                    f" exact_status={record.fields.get('exact_status', 'unknown')}"
+                )
+            elif record.mode == "symbolic_assembly":
+                detail = (
+                    f" assembled_value={record.fields.get('assembled_value', 'unknown')}"
+                    f" candidate_status={record.fields.get('candidate_status', 'unknown')}"
                     f" exact_status={record.fields.get('exact_status', 'unknown')}"
                 )
             lines.append(

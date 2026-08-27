@@ -123,9 +123,51 @@ A successful result contains
 exact_status=PROVED_BY_EXACT_THETA_ALGEBRA_AND_PUISEUX_SERIES
 ```
 
+### `symbolic_assembly`
+
+This is the final exact bookkeeping gate. It does not contain a benchmark
+constant or a hard-coded normalization formula. The agent supplies:
+
+- exact `H+` and `H-` normalization factors already established independently;
+- exact `c+` and `c-` finite parts already established independently;
+- the algebraic combination required by its derivation, using the symbols
+  `Hp`, `Hm`, `cp`, `cm`;
+- an explicit proposed closed form.
+
+The helper substitutes the four supplied exact values, simplifies the proposed
+combination symbolically, and compares it with the proposed closed form.
+
+For example, a successful real-chain regression reports component products such
+as
+
+```text
+h_plus_times_c_plus=-sqrt(pi)/24
+h_minus_times_c_minus=sqrt(pi)/24
+```
+
+and then emits
+
+```text
+candidate_status=PROVED_EQUAL
+exact_status=PROVED_BY_EXACT_COMPONENT_ASSEMBLY
+```
+
+A wrong closed form emits
+
+```text
+candidate_status=MISMATCH
+exact_status=REFUTED_COMPONENT_ASSEMBLY
+```
+
+and is a hard `refuted` ledger record. The tool proves only the stated
+combination of the supplied exact components; it does not prove that the agent
+selected the correct components, signs, or normalization from the source. That
+provenance is enforced by the earlier gates and must be explained in the final
+report.
+
 ## ProofLedger behavior
 
-The ledger understands all three post-perturbative symbolic modes directly.
+The ledger understands all four post-perturbative symbolic modes directly.
 
 A candidate mismatch is a hard `refuted` record. The convenience predicate
 
@@ -133,16 +175,18 @@ A candidate mismatch is a hard `refuted` record. The convenience predicate
 ledger.has_exact_symbolic_mu2_chain()
 ```
 
-is true only if all three stages have exact successful records:
+is true only if all four stages have exact successful records:
 
 1. recurrence-derived forcing quotient;
 2. hypergeometric/Pochhammer quotient;
-3. local finite-part extraction.
+3. local finite-part extraction;
+4. exact component assembly against the proposed closed form.
 
-The dual symbolic wrapper adds all three modes to the existing final
+The dual symbolic wrapper adds all four modes to the existing final
 required-mode and exact-mode sets. Consequently the final synthesis cannot pass
 merely because recurrence transformation, perturbative extraction, Gamma
-arithmetic and asymptotic fitting succeeded.
+arithmetic, asymptotic fitting, or even the first three symbolic stages
+succeeded.
 
 ## Provenance chain
 
@@ -156,23 +200,29 @@ The final report is expected to maintain the following chain explicitly:
    from that recurrence-derived quotient;
 5. derivation of the weighted generating expression from the verified sequence;
 6. exact `symbolic_finite_part` audit;
-7. Gamma and normalization assembly only after the preceding steps are
-   justified.
+7. exact Gamma-normalization audit;
+8. explicit derivation of the relative signs and overall normalization used to
+   combine the Gamma factors with the finite parts;
+9. exact `symbolic_assembly` audit of that combination and its proposed closed
+   form.
 
-The new forcing-ratio stage removes a previous weak point: the agent may no
-longer jump directly from an inhomogeneous recurrence to a visually familiar
-binomial family without proving the quotient implied by variation of constants.
+The forcing-ratio stage prevents a jump from an inhomogeneous recurrence to a
+visually familiar binomial family. The assembly stage prevents a different
+shortcut at the end: individually correct Gamma factors and finite parts cannot
+be silently combined with an unverified sign or factor of two.
 
-A finite-part success on an arbitrary expression is still not enough to
-establish the semilocal limiting constant. The report must justify the weighted
-generating expression itself and preserve any remaining gap.
+A successful assembly does not erase provenance obligations. It proves the
+algebra of the supplied components; the report must still show why those
+components and that combination are the ones implied by the semilocal
+recurrence.
 
 ## Blindness boundary
 
-No final limiting constant is encoded by this extension. The regression suite
-for `symbolic_mu2.py` contains exact algebraic checkpoints for the
-post-perturbative chain, but the agent-facing extension accepts generic safe
-expressions and does not reveal a target constant.
+The agent-facing implementation contains no hard-coded limiting constant. The
+assembly mode is generic: both the algebraic combination and the candidate
+closed form are supplied by the agent. Regression tests contain exact known
+checkpoints for the research chain so that CI can detect regressions, but the
+verifier itself does not select or reveal a target constant.
 
 ## Scientific boundary
 
