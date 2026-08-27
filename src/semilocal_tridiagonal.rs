@@ -12,11 +12,12 @@
 
 use std::fmt;
 
-use faer::dyn_stack::{MemBuffer, MemStack, StackReq};
+use faer::dyn_stack::{MemBuffer, MemStack};
 use faer::linalg::evd::{
     ComputeEigenvectors, SelfAdjointEvdParams, self_adjoint_evd_scratch,
     tridiagonal_self_adjoint_evd,
 };
+use faer::linalg::temp_mat_scratch;
 use faer::{Auto, Col, Mat, MatRef, Par, Spec};
 
 use crate::semilocal::{
@@ -136,9 +137,10 @@ pub fn crossing_derivatives_tridiagonal(
 /// Return the sorted square-root spectrum of the first-order linearization
 /// `K(0) + step K'(0)` using no eigenvectors.
 ///
-/// For real `f64`, faer's `u=None` tridiagonal path needs only two temporary
-/// real vectors. The explicit [`StackReq`] below therefore keeps the auxiliary
-/// workspace O(m); output storage is O(m) as well.
+/// For real `f64`, faer's `u=None` tridiagonal path first creates two
+/// simultaneous `m x 1` temporary real matrices. The workspace below is built
+/// from faer's own [`temp_mat_scratch`] layout requirement, preserving its
+/// alignment while remaining O(m) in auxiliary storage.
 ///
 /// `step` must be finite and small enough that the finite matrix remains
 /// positive definite.
@@ -162,11 +164,7 @@ pub fn first_order_sqrt_spectrum_tridiagonal_eigenvalues_only(
     let mut eigenvalues = Col::<f64>::zeros(block_size);
 
     let params = Spec::new(<SelfAdjointEvdParams as Auto<f64>>::auto());
-    // Inspection of faer 0.24.4's real-valued `u=None` implementation shows
-    // that it allocates exactly two simultaneous n-by-1 real temporaries before
-    // invoking the in-place tridiagonal QR algorithm. This public dyn-stack
-    // requirement mirrors that storage without allocating an n-by-n buffer.
-    let workspace = StackReq::new::<f64>(block_size).array(2);
+    let workspace = temp_mat_scratch::<f64>(block_size, 1).array(2);
     let mut memory = MemBuffer::new(workspace);
 
     tridiagonal_self_adjoint_evd(
