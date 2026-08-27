@@ -14,7 +14,11 @@ fn assert_close_scaled(actual: f64, expected: f64, relative: f64, absolute: f64,
 #[test]
 fn empty_tridiagonal_block_returns_no_crossings() {
     for parity in [ProlateParity::WPlus, ProlateParity::WMinus] {
-        assert!(crossing_derivatives_tridiagonal(0, parity).unwrap().is_empty());
+        assert!(
+            crossing_derivatives_tridiagonal(0, parity)
+                .unwrap()
+                .is_empty()
+        );
     }
 }
 
