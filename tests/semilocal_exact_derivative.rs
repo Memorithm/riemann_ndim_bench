@@ -1,8 +1,7 @@
 use riemann_ndim_bench::semilocal::{
-    ProlateParity, alpha_sequence, archimedean_a2, archimedean_a2_prime,
-    build_kprime_closed, build_kprime_unsimplified, crossing_derivatives,
-    merged_response_stats, merged_total_abs_derivative,
-    sign_corrected_min_diagonal_dominance_margin,
+    ProlateParity, alpha_sequence, archimedean_a2, archimedean_a2_prime, build_kprime_closed,
+    build_kprime_unsimplified, crossing_derivatives, merged_response_stats,
+    merged_total_abs_derivative, sign_corrected_min_diagonal_dominance_margin,
 };
 
 fn assert_close(actual: f64, expected: f64, tolerance: f64) {
@@ -111,11 +110,7 @@ fn reproduces_independent_large_prime_regression_targets() {
     for (m, expected_mean, expected_trimmed) in targets {
         let stats = merged_response_stats(m).unwrap();
         assert_close(m as f64 * stats.mean_abs, expected_mean, 5e-12);
-        assert_close(
-            m as f64 * stats.trimmed_mean_abs,
-            expected_trimmed,
-            5e-12,
-        );
+        assert_close(m as f64 * stats.trimmed_mean_abs, expected_trimmed, 5e-12);
     }
 }
 
