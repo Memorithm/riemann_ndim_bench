@@ -208,7 +208,10 @@ impl fmt::Display for PairwiseError {
         match self {
             Self::Semilocal(error) => write!(f, "{error}"),
             Self::InvalidStep { value } => {
-                write!(f, "finite-difference step must be positive and finite: {value:e}")
+                write!(
+                    f,
+                    "finite-difference step must be positive and finite: {value:e}"
+                )
             }
         }
     }
@@ -246,12 +249,9 @@ pub fn pairwise_first_order_derivatives(
 ) -> Result<Vec<f64>, PairwiseError> {
     checked_pairwise_step(step)?;
 
-    let forward = first_order_sqrt_spectrum_tridiagonal_eigenvalues_only(
-        block_size, parity, step,
-    )?;
-    let backward = first_order_sqrt_spectrum_tridiagonal_eigenvalues_only(
-        block_size, parity, -step,
-    )?;
+    let forward = first_order_sqrt_spectrum_tridiagonal_eigenvalues_only(block_size, parity, step)?;
+    let backward =
+        first_order_sqrt_spectrum_tridiagonal_eigenvalues_only(block_size, parity, -step)?;
 
     Ok(forward
         .into_iter()
