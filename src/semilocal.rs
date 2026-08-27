@@ -99,12 +99,12 @@ impl SymmetricTridiagonal {
         let mut value = 0.0;
 
         for i in 0..self.len() {
-            let ui = u.read(i, column);
+            let ui = u[(i, column)];
             value += self.diag[i] * ui * ui;
         }
 
         for i in 0..self.off_diag.len() {
-            value += 2.0 * self.off_diag[i] * u.read(i, column) * u.read(i + 1, column);
+            value += 2.0 * self.off_diag[i] * u[(i, column)] * u[(i + 1, column)];
         }
 
         value
@@ -357,12 +357,12 @@ pub fn crossing_derivatives(
     let dense = k0.to_dense();
     let evd = SelfAdjointEigen::new(dense.as_ref(), Side::Lower)?;
     let u = evd.U();
-    let eigenvalues = evd.S().column_vector();
+    let s = evd.S();
 
     let mut out = Vec::with_capacity(block_size);
 
     for j in 0..block_size {
-        let mu = eigenvalues.read(j);
+        let mu = s[j];
         if mu <= 0.0 || !mu.is_finite() {
             return Err(SemilocalError::NonPositiveEigenvalue {
                 index: j,
