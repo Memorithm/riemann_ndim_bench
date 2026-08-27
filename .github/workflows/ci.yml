@@ -36,14 +36,17 @@ jobs:
         run: >-
           python -m py_compile
           tools/verify_math.py
+          tools/symbolic_mu2.py
           tools/proof_ledger.py
           tools/riemann_research_agent.py
           tools/riemann_dual_research_agent.py
           tools/test_verify_math.py
+          tools/test_symbolic_mu2.py
           tools/test_proof_ledger.py
 
       - name: Research harness regression tests
         run: >-
           python -m unittest -v
           tools/test_verify_math.py
+          tools/test_symbolic_mu2.py
           tools/test_proof_ledger.py
