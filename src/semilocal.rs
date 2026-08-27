@@ -1,7 +1,7 @@
 //! Exact first-order `q=1/p` derivative of the finite semilocal prolate blocks.
 //!
 //! This module implements the source-derived coefficient recorded in
-//! `docs/PHASE4_FIRST_ORDER_DERIVATION.md`.  It is a finite-compression
+//! `docs/PHASE4_FIRST_ORDER_DERIVATION.md`. It is a finite-compression
 //! perturbation calculation only; it does not identify crossings with zeta
 //! zeros and carries no direct RH implication.
 
@@ -51,7 +51,6 @@ pub struct SymmetricTridiagonal {
 impl SymmetricTridiagonal {
     fn new(diag: Vec<f64>, off_diag: Vec<f64>) -> Self {
         debug_assert!(diag.is_empty() || off_diag.len() + 1 == diag.len());
-        debug_assert!(diag.is_empty() && off_diag.is_empty() || !diag.is_empty());
         Self { diag, off_diag }
     }
 
@@ -98,13 +97,19 @@ impl SymmetricTridiagonal {
     /// Evaluate `u^T M u` in O(n) using the tridiagonal structure.
     fn quadratic_form_column(&self, u: faer::MatRef<'_, f64>, column: usize) -> f64 {
         let mut value = 0.0;
+
         for i in 0..self.len() {
-            let ui = u[(i, column)];
+            let ui = u.read(i, column);
             value += self.diag[i] * ui * ui;
         }
+
         for i in 0..self.off_diag.len() {
-            value += 2.0 * self.off_diag[i] * u[(i, column)] * u[(i + 1, column)];
+            value += 2.0
+                * self.off_diag[i]
+                * u.read(i, column)
+                * u.read(i + 1, column);
         }
+
         value
     }
 }
@@ -121,7 +126,9 @@ pub enum SemilocalError {
 impl fmt::Display for SemilocalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Eigensolver(error) => write!(f, "self-adjoint eigensolver failed: {error:?}"),
+            Self::Eigensolver(error) => {
+                write!(f, "self-adjoint eigensolver failed: {error:?}")
+            }
             Self::NonPositiveEigenvalue { index, value } => write!(
                 f,
                 "K(0) eigenvalue at index {index} is not strictly positive: {value:e}"
@@ -169,20 +176,24 @@ pub fn alpha_sequence(count: usize) -> Vec<f64> {
 
     let mut alpha = vec![0.0; count];
     alpha[0] = 1.0;
+
     for n in 0..count - 1 {
-        let n = n as f64;
-        alpha[n as usize + 1] = -((n + 0.5) / (n + 1.0)) * alpha[n as usize];
+        let nf = n as f64;
+        alpha[n + 1] = -((nf + 0.5) / (nf + 1.0)) * alpha[n];
     }
+
     alpha
 }
 
 /// Stable single-value form of [`alpha_sequence`].
 pub fn alpha(n: usize) -> f64 {
     let mut value = 1.0;
+
     for k in 0..n {
-        let k = k as f64;
-        value *= -((k + 0.5) / (k + 1.0));
+        let kf = k as f64;
+        value *= -((kf + 0.5) / (kf + 1.0));
     }
+
     value
 }
 
@@ -223,7 +234,11 @@ pub fn build_k0(block_size: usize, parity: ProlateParity) -> SymmetricTridiagona
 
     for i in 0..block_size {
         let d = parity.degree(i);
-        let left = if d == 0 { 0.0 } else { archimedean_a2(d - 1) };
+        let left = if d == 0 {
+            0.0
+        } else {
+            archimedean_a2(d - 1)
+        };
         let right = archimedean_a2(d);
         diag.push((left + right + 0.25) / b_degree(d));
 
@@ -264,7 +279,8 @@ pub fn build_kprime_closed(
                     * (4.0 * d_f + 1.0)
                     * (4.0 * d_f + 9.0)))
                 .sqrt();
-            let value = -SQRT_2 * (4.0 * d_f + 5.0) * alpha_d * radical / (16.0 * PI);
+            let value =
+                -SQRT_2 * (4.0 * d_f + 5.0) * alpha_d * radical / (16.0 * PI);
             off_diag.push(value);
         }
     }
@@ -331,12 +347,14 @@ pub fn sign_corrected_min_diagonal_dominance_margin(
     for i in 0..kp.len() {
         let diagonal = sign * kp.diagonal()[i];
         let mut row_sum = 0.0;
+
         if i > 0 {
-            row_sum += (sign * kp.off_diagonal()[i - 1]).abs();
+            row_sum += kp.off_diagonal()[i - 1].abs();
         }
         if i + 1 < kp.len() {
-            row_sum += (sign * kp.off_diagonal()[i]).abs();
+            row_sum += kp.off_diagonal()[i].abs();
         }
+
         min_margin = min_margin.min(diagonal - row_sum);
     }
 
@@ -358,20 +376,23 @@ pub fn crossing_derivatives(
     let dense = k0.to_dense();
     let evd = SelfAdjointEigen::new(dense.as_ref(), Side::Lower)?;
     let u = evd.U();
-    let s = evd.S();
+    let eigenvalues = evd.S().column_vector();
 
     let mut out = Vec::with_capacity(block_size);
+
     for j in 0..block_size {
-        let mu = s[j];
-        if !(mu > 0.0) {
+        let mu = eigenvalues.read(j);
+        if mu <= 0.0 || !mu.is_finite() {
             return Err(SemilocalError::NonPositiveEigenvalue {
                 index: j,
                 value: mu,
             });
         }
+
         let lambda = mu.sqrt();
         let mu_prime = kprime.quadratic_form_column(u, j);
         let lambda_prime = mu_prime / (2.0 * lambda);
+
         out.push(CrossingDerivative {
             parity,
             parity_index: j,
@@ -423,7 +444,10 @@ pub fn merged_response_stats(block_size: usize) -> Result<ResponseStats, Semiloc
     let count = values.len() as f64;
     let mean_abs = values.iter().map(|value| value.abs()).sum::<f64>() / count;
     let rms = (values.iter().map(|value| value * value).sum::<f64>() / count).sqrt();
-    let linf = values.iter().map(|value| value.abs()).fold(0.0_f64, f64::max);
+    let linf = values
+        .iter()
+        .map(|value| value.abs())
+        .fold(0.0_f64, f64::max);
 
     let trim = values.len() / 8;
     let trimmed = &values[trim..values.len() - trim];
