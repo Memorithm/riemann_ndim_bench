@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exact symbolic helpers for the post-perturbative mu^2 derivation chain.
 
-The tool accepts only small whitelisted expression grammars.  It is designed to
+The tool accepts only small whitelisted expression grammars. It is designed to
 verify an agent's proposed hypergeometric structure and local finite-part
 algebra; no benchmark-specific limiting constant is encoded here.
 """
@@ -174,17 +174,22 @@ def hypergeometric_report(
             f"_{p}F_{q}([{numerator_rendered}];[{denominator_rendered}];{sp.sstr(base)}*z)"
         )
 
+    candidate_matches = True
     if candidate_ratio_text is not None:
         candidate = safe_expr(candidate_ratio_text, names={"k": k})
         difference = sp.factor(sp.cancel(candidate - ratio))
+        candidate_matches = difference == 0
         print(f"candidate_ratio={sp.sstr(candidate)}")
         print(f"candidate_difference={sp.sstr(difference)}")
         print(
             "candidate_status="
-            + ("PROVED_EQUAL" if difference == 0 else "MISMATCH")
+            + ("PROVED_EQUAL" if candidate_matches else "MISMATCH")
         )
 
-    print("exact_status=PROVED_BY_POCHHAMMER_QUOTIENT")
+    if candidate_matches:
+        print("exact_status=PROVED_BY_POCHHAMMER_QUOTIENT")
+    else:
+        print("exact_status=REFUTED_CANDIDATE_RATIO")
 
 
 # ---------------------------------------------------------------------------
