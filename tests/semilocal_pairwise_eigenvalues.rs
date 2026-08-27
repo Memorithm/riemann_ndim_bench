@@ -58,9 +58,8 @@ fn pairwise_quadratic_extrapolation_matches_exact_first_order_total_variation() 
 #[test]
 fn pairwise_trace_preserves_parity_signs() {
     for block_size in [8_usize, 32, 128] {
-        let plus =
-            pairwise_first_order_trace_derivative(block_size, ProlateParity::WPlus, 2.5e-4)
-                .unwrap();
+        let plus = pairwise_first_order_trace_derivative(block_size, ProlateParity::WPlus, 2.5e-4)
+            .unwrap();
         let minus =
             pairwise_first_order_trace_derivative(block_size, ProlateParity::WMinus, 2.5e-4)
                 .unwrap();
@@ -100,7 +99,13 @@ fn quadratic_even_power_extrapolation_eliminates_h2_and_h4_terms() {
     let model = |step: f64| exact + a2 * step.powi(2) + a4 * step.powi(4);
     let extrapolated = quadratic_even_power_extrapolate(model(h), model(h / 2.0), model(h / 4.0));
 
-    assert_close_scaled(extrapolated, exact, 0.0, 2e-14, "synthetic even-power extrapolation");
+    assert_close_scaled(
+        extrapolated,
+        exact,
+        0.0,
+        2e-14,
+        "synthetic even-power extrapolation",
+    );
 }
 
 #[test]
