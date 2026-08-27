@@ -104,10 +104,7 @@ impl SymmetricTridiagonal {
         }
 
         for i in 0..self.off_diag.len() {
-            value += 2.0
-                * self.off_diag[i]
-                * u.read(i, column)
-                * u.read(i + 1, column);
+            value += 2.0 * self.off_diag[i] * u.read(i, column) * u.read(i + 1, column);
         }
 
         value
@@ -234,11 +231,7 @@ pub fn build_k0(block_size: usize, parity: ProlateParity) -> SymmetricTridiagona
 
     for i in 0..block_size {
         let d = parity.degree(i);
-        let left = if d == 0 {
-            0.0
-        } else {
-            archimedean_a2(d - 1)
-        };
+        let left = if d == 0 { 0.0 } else { archimedean_a2(d - 1) };
         let right = archimedean_a2(d);
         diag.push((left + right + 0.25) / b_degree(d));
 
@@ -253,10 +246,7 @@ pub fn build_k0(block_size: usize, parity: ProlateParity) -> SymmetricTridiagona
 }
 
 /// Build `K'(0)` from the closed forms of the Phase-4 derivation note.
-pub fn build_kprime_closed(
-    block_size: usize,
-    parity: ProlateParity,
-) -> SymmetricTridiagonal {
+pub fn build_kprime_closed(block_size: usize, parity: ProlateParity) -> SymmetricTridiagonal {
     if block_size == 0 {
         return SymmetricTridiagonal::new(Vec::new(), Vec::new());
     }
@@ -274,13 +264,9 @@ pub fn build_kprime_closed(
         if i + 1 < block_size {
             let d_f = d as f64;
             let radical = ((2.0 * d_f + 1.0) * (2.0 * d_f + 3.0)
-                / ((d_f + 1.0)
-                    * (d_f + 2.0)
-                    * (4.0 * d_f + 1.0)
-                    * (4.0 * d_f + 9.0)))
+                / ((d_f + 1.0) * (d_f + 2.0) * (4.0 * d_f + 1.0) * (4.0 * d_f + 9.0)))
                 .sqrt();
-            let value =
-                -SQRT_2 * (4.0 * d_f + 5.0) * alpha_d * radical / (16.0 * PI);
+            let value = -SQRT_2 * (4.0 * d_f + 5.0) * alpha_d * radical / (16.0 * PI);
             off_diag.push(value);
         }
     }
@@ -292,10 +278,7 @@ pub fn build_kprime_closed(
 ///
 /// This is intentionally separate from [`build_kprime_closed`] so tests can
 /// detect algebraic regressions in the closed-form simplification.
-pub fn build_kprime_unsimplified(
-    block_size: usize,
-    parity: ProlateParity,
-) -> SymmetricTridiagonal {
+pub fn build_kprime_unsimplified(block_size: usize, parity: ProlateParity) -> SymmetricTridiagonal {
     if block_size == 0 {
         return SymmetricTridiagonal::new(Vec::new(), Vec::new());
     }
@@ -317,12 +300,10 @@ pub fn build_kprime_unsimplified(
 
         if i + 1 < block_size {
             let a_product = (archimedean_a2(d) * archimedean_a2(d + 1)).sqrt();
-            let logarithmic_derivative = r_n(alphas[d], alphas[d + 1])
-                + r_n(alphas[d + 1], alphas[d + 2]);
-            off_diag.push(
-                a_product * logarithmic_derivative
-                    / (b_degree(d) * b_degree(d + 2)).sqrt(),
-            );
+            let logarithmic_derivative =
+                r_n(alphas[d], alphas[d + 1]) + r_n(alphas[d + 1], alphas[d + 2]);
+            off_diag
+                .push(a_product * logarithmic_derivative / (b_degree(d) * b_degree(d + 2)).sqrt());
         }
     }
 
