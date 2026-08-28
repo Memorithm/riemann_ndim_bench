@@ -14,9 +14,13 @@ use crate::semilocal::{ProlateParity, build_k0, build_kprime_closed};
 pub enum ResolventTraceError {
     /// The shift in `K + t I` must be finite and non-negative.
     InvalidShift { value: f64 },
+    /// A row-local frozen model requires both neighboring edges.
+    InvalidInteriorRow { row: usize, len: usize },
     /// A non-positive or non-finite LDL pivot would violate positive
     /// definiteness of the shifted finite matrix.
     NonPositivePivot { index: usize, value: f64 },
+    /// The frozen Toeplitz denominator must stay strictly positive.
+    NonPositiveFrozenDiscriminant { row: usize, value: f64 },
 }
 
 impl fmt::Display for ResolventTraceError {
@@ -28,15 +32,31 @@ impl fmt::Display for ResolventTraceError {
                     "resolvent shift must be finite and non-negative: {value:e}"
                 )
             }
+            Self::InvalidInteriorRow { row, len } => write!(
+                f,
+                "frozen resolvent model requires an interior row: row={row}, len={len}"
+            ),
             Self::NonPositivePivot { index, value } => write!(
                 f,
                 "shifted tridiagonal LDL pivot at index {index} is not positive: {value:e}"
+            ),
+            Self::NonPositiveFrozenDiscriminant { row, value } => write!(
+                f,
+                "frozen resolvent symbol at row {row} is not strictly positive: {value:e}"
             ),
         }
     }
 }
 
 impl std::error::Error for ResolventTraceError {}
+
+fn checked_shift(shift: f64) -> Result<(), ResolventTraceError> {
+    if shift.is_finite() && shift >= 0.0 {
+        Ok(())
+    } else {
+        Err(ResolventTraceError::InvalidShift { value: shift })
+    }
+}
 
 fn checked_pivot(index: usize, value: f64) -> Result<f64, ResolventTraceError> {
     if value.is_finite() && value > 0.0 {
@@ -96,9 +116,7 @@ impl SignCorrectedResolventTraceKernel {
         &self,
         shift: f64,
     ) -> Result<(Vec<f64>, Vec<f64>), ResolventTraceError> {
-        if !shift.is_finite() || shift < 0.0 {
-            return Err(ResolventTraceError::InvalidShift { value: shift });
-        }
+        checked_shift(shift)?;
         if self.is_empty() {
             return Ok((Vec::new(), Vec::new()));
         }
@@ -154,6 +172,53 @@ impl SignCorrectedResolventTraceKernel {
         }
 
         Ok(rows)
+    }
+
+    /// Closed frozen-row Toeplitz model for the weighted resolvent density.
+    ///
+    /// At an interior row, freeze the two neighboring `K` edges to their
+    /// arithmetic mean `b` and the two neighboring `H` edges to `o`. After
+    /// alternating conjugation the scalar symbols are
+    ///
+    /// `k(theta) = a - 2 b cos(theta)` and
+    /// `h(theta) = d - 2 o cos(theta)`,
+    ///
+    /// where `a=K_ii+shift` and `d=H_ii`. The returned value is the exact
+    /// infinite-Toeplitz row integral
+    ///
+    /// `(1/(2 pi)) integral h(theta)/k(theta) dtheta`.
+    ///
+    /// This is a local comparison model only. The method makes no claim that
+    /// the finite-section row contribution converges to it at a particular
+    /// rate.
+    pub fn frozen_row_resolvent_density(
+        &self,
+        row: usize,
+        shift: f64,
+    ) -> Result<f64, ResolventTraceError> {
+        checked_shift(shift)?;
+        if row == 0 || row >= self.len().saturating_sub(1) {
+            return Err(ResolventTraceError::InvalidInteriorRow {
+                row,
+                len: self.len(),
+            });
+        }
+
+        let b = 0.5 * (self.off_diagonal[row - 1] + self.off_diagonal[row]);
+        let o = 0.5 * (self.h_off_diagonal[row - 1] + self.h_off_diagonal[row]);
+        let a = self.diagonal[row] + shift;
+        let c = 2.0 * b;
+        let discriminant = (a - c) * (a + c);
+        if !discriminant.is_finite() || discriminant <= 0.0 {
+            return Err(ResolventTraceError::NonPositiveFrozenDiscriminant {
+                row,
+                value: discriminant,
+            });
+        }
+
+        let i0 = 1.0 / discriminant.sqrt();
+        let i1 = (a * i0 - 1.0) / c;
+        Ok(self.h_diagonal[row] * i0 - 2.0 * o * i1)
     }
 
     /// Compute `Tr[(K(0) + shift I)^(-1) H]` in O(m) time and storage.
