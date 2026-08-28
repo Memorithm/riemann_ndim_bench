@@ -1,9 +1,7 @@
-use faer::linalg::solvers::SelfAdjointEigen;
 use faer::Side;
+use faer::linalg::solvers::SelfAdjointEigen;
 
-use riemann_ndim_bench::semilocal::{
-    ProlateParity, build_k0, build_kprime_closed,
-};
+use riemann_ndim_bench::semilocal::{ProlateParity, build_k0, build_kprime_closed};
 use riemann_ndim_bench::semilocal_resolvent::SignCorrectedResolventTraceKernel;
 
 fn assert_close_scaled(actual: f64, expected: f64, relative: f64, absolute: f64, label: &str) {
@@ -31,10 +29,7 @@ fn cavity_green_bands_match_dense_spectral_oracle() {
                 let cavity = kernel.cavity_green_bands(shift).unwrap();
 
                 assert_eq!(cavity.diagonal().len(), block_size);
-                assert_eq!(
-                    cavity.off_diagonal().len(),
-                    block_size.saturating_sub(1)
-                );
+                assert_eq!(cavity.off_diagonal().len(), block_size.saturating_sub(1));
                 assert_eq!(cavity.left_denominators().len(), block_size);
                 assert_eq!(cavity.right_denominators().len(), block_size);
                 assert!(cavity.left_denominators().iter().all(|value| *value > 0.0));
@@ -52,9 +47,7 @@ fn cavity_green_bands_match_dense_spectral_oracle() {
                         expected,
                         2.0e-10,
                         2.0e-11,
-                        &format!(
-                            "m={block_size} parity={parity:?} shift={shift:e} diag[{i}]"
-                        ),
+                        &format!("m={block_size} parity={parity:?} shift={shift:e} diag[{i}]"),
                     );
                 }
 
@@ -70,9 +63,7 @@ fn cavity_green_bands_match_dense_spectral_oracle() {
                         expected,
                         2.0e-10,
                         2.0e-11,
-                        &format!(
-                            "m={block_size} parity={parity:?} shift={shift:e} off[{i}]"
-                        ),
+                        &format!("m={block_size} parity={parity:?} shift={shift:e} off[{i}]"),
                     );
                 }
             }
