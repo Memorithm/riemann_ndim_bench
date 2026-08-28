@@ -117,8 +117,11 @@ impl CavityErrorTransport {
 ///
 /// `delta_i^+ = a_i - e_i^2/q_{i+1} - q_i`.
 ///
-/// The row must have two neighbors on each side so that `q_{i-1}`, `q_i`,
-/// and `q_{i+1}` are all defined by the same frozen interior-row contract.
+/// The row must have two neighbors on each side.  In addition, the frozen
+/// Toeplitz symbols at `i-1`, `i`, and `i+1` must be strictly positive so
+/// that all three positive fixed points exist.  Failure of that local
+/// positivity condition is reported as `NonPositiveFrozenDiscriminant`
+/// rather than extending the frozen model into the first exceptional rows.
 pub fn cavity_error_transport(
     block_size: usize,
     row: usize,
