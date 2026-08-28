@@ -96,9 +96,7 @@ fn validates_documented_soft_edge_row_asymptotics() {
         );
 
         // W_i = 1/[2 pi^(3/2) sqrt(i)] * [1 - a/(16 i) + O(i^-2)].
-        let scaled_weight = 16.0
-            * i
-            * (2.0 * PI.powf(1.5) * i.sqrt() * sample.weight - 1.0);
+        let scaled_weight = 16.0 * i * (2.0 * PI.powf(1.5) * i.sqrt() * sample.weight - 1.0);
         assert_near(
             scaled_weight,
             -a,
