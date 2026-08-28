@@ -118,7 +118,8 @@ fn exact_factorization_does_not_assume_uniform_total_contraction() {
     let row = 256_usize;
 
     for parity in [ProlateParity::WPlus, ProlateParity::WMinus] {
-        let (transport, factors) = cavity_drift_factorization(block_size, row, parity, 0.0).unwrap();
+        let (transport, factors) =
+            cavity_drift_factorization(block_size, row, parity, 0.0).unwrap();
 
         assert!(factors.left_local_contraction() < 1.0);
         assert!(factors.right_local_contraction() < 1.0);
