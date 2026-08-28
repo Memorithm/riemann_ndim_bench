@@ -19,8 +19,7 @@ fn finite_cavity_errors_split_exactly_into_transport_and_drift() {
         for parity in [ProlateParity::WPlus, ProlateParity::WMinus] {
             for shift in [0.0_f64, 1.0e-8, 1.0e-4, 1.0] {
                 for row in rows {
-                    let transport =
-                        cavity_error_transport(block_size, row, parity, shift).unwrap();
+                    let transport = cavity_error_transport(block_size, row, parity, shift).unwrap();
 
                     for value in [
                         transport.left_error(),
