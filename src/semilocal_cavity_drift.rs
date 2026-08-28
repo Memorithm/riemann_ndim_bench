@@ -194,10 +194,8 @@ pub fn cavity_drift_factorization(
 
     let right_edge_drift =
         (frozen_edge_current * frozen_edge_current - outgoing_edge * outgoing_edge) / q_current;
-    let right_fixed_point_drift =
-        outgoing_edge * outgoing_edge * (1.0 / q_current - 1.0 / q_next);
-    let right_edge_ratio =
-        outgoing_edge * outgoing_edge / (frozen_edge_next * frozen_edge_next);
+    let right_fixed_point_drift = outgoing_edge * outgoing_edge * (1.0 / q_current - 1.0 / q_next);
+    let right_edge_ratio = outgoing_edge * outgoing_edge / (frozen_edge_next * frozen_edge_next);
     let right_cavity_ratio = q_next / right_cavity;
 
     let factorization = CavityDriftFactorization {
