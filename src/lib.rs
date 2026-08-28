@@ -1,5 +1,6 @@
 mod foundation;
 pub mod semilocal;
+pub mod semilocal_cavity_drift;
 pub mod semilocal_cavity_transport;
 pub mod semilocal_frozen_cavity;
 pub mod semilocal_resolvent;
