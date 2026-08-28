@@ -1,6 +1,6 @@
 # Issue #7 implementation checkpoint
 
-This branch upstreams the exact finite `q=0` single-prime semilocal prolate derivative that had previously been validated only in the Thor exploratory workspace.
+Issue #7 upstreamed the exact finite `q=0` single-prime semilocal prolate derivative that had previously been validated only in the Thor exploratory workspace.
 
 ## Implemented source-derived formulas
 
@@ -24,12 +24,14 @@ and
 
 It builds both `K(0)` and `K'(0)` for `W+` and `W-`. `K'(0)` is implemented twice: once from the unsimplified source-derived coefficient and once from the closed forms in `PHASE4_FIRST_ORDER_DERIVATION.md`, so the simplification can be regression-tested independently.
 
-The crossing derivatives use `faer::linalg::solvers::SelfAdjointEigen` and the documented `U()` / `S()` decomposition factors:
+The dense reference crossing derivatives use `faer::linalg::solvers::SelfAdjointEigen` and the documented `U()` / `S()` decomposition factors:
 
 ```text
 mu'_j(0) = u_j^T K'(0) u_j,
 lambda'_j(0) = mu'_j(0)/(2 lambda_j).
 ```
+
+The later `src/semilocal_tridiagonal.rs` path feeds the same exact `K(0)` directly to faer's self-adjoint tridiagonal EVD. It preserves the dense `SelfAdjointEigen` implementation as an independent differential oracle rather than replacing it.
 
 ## Regression coverage
 
@@ -42,13 +44,17 @@ lambda'_j(0) = mu'_j(0)/(2 lambda_j).
 - negative `W+` and positive `W-` Rayleigh derivatives on normal test sizes;
 - the independent large-prime aggregate targets at `m=16,24,32`;
 - the documented `m=128` shape statistics;
-- an ignored expensive regression reproducing total response through `m=1024`.
+- an ignored dense-reference regression reproducing total response through `m=1024`.
 
-The expensive test is intentionally ignored in the default suite because this implementation uses the dense `SelfAdjointEigen` path required by issue #7. It remains available explicitly before promoting high-dimensional asymptotics.
+`tests/semilocal_tridiagonal_evd.rs` differentially validates dense and direct-tridiagonal eigensystems through block size `128` for both parity sectors, including `mu`, `lambda`, `mu'`, `lambda'`, ordering, and derivative signs.
+
+`tests/semilocal_high_m_diagnostics.rs` is a no-harness scientific regression target executed by `cargo test --all-targets`. It evaluates the independently validated direct-tridiagonal route at `m=1024`, checks the documented high-block aggregate targets and all derivative signs, and prints runtime, Linux process peak RSS when available, minimum/maximum spectral values, minimum Rayleigh denominator, relative minimum `mu`, and finite-value counts.
+
+The high-block diagnostics do not use the Stieltjes quadrature path.
 
 ## Independent reconstruction check
 
-The formulas in this branch were independently reconstructed outside the Rust implementation. They reproduce, to floating-point precision, the historical targets recorded in the issue and Phase-4 notes, including
+The exact implementation reproduces, to floating-point precision, the historical targets recorded in the issue and Phase-4 notes, including
 
 ```text
 m=16: m*mean_abs         = 0.28263208002937096
@@ -64,10 +70,28 @@ S(128) = 3.9708455435305754
 S(256) = 4.640481894221456
 ```
 
-## Validation boundary
+The documented dense Thor reproduction also reaches `m=1024`; see `PHASE4_RUST_VALIDATION_2026-08-14.md`.
 
-GitHub Actions currently fails before repository steps are scheduled because of the pre-existing runner/billing state (`runner_id=0`, `steps=[]`). Thor is also currently unavailable. The branch has therefore been reviewed against the documented `faer 0.24.4` API and independently numerically reconstructed, but the repository Rust CI still needs to execute once a runner is available.
+## Validation status
 
-The issue branch has been refreshed onto the `main` state that already contains PR #10, so it is intended to merge without dropping the verified research harness.
+The original PR #11 was prepared while GitHub Actions could not obtain a runner because of the then-current account/billing state. That limitation is historical, not current repository status.
 
-This remains a finite-compression perturbation calculation. It does not identify these crossings with zeta zeros and does not imply the Riemann hypothesis.
+Subsequent PR #16 (`perf: add validated tridiagonal semilocal EVD path`) passed the complete repository CI on commit `452fdf33303d6b89b50ff6eacf324673171b7b6f`, including rustfmt, clippy with `-D warnings`, all Rust tests, the release smoke test, Python compilation, and the research-harness regression suite. GitHub Actions run: <https://github.com/Memorithm/riemann_ndim_bench/actions/runs/33123860169>.
+
+For a reproducible high-block diagnostic on the current checkout, run:
+
+```bash
+cargo test --test semilocal_high_m_diagnostics
+```
+
+The normal complete scientific regression remains:
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test --all-targets
+```
+
+## Scientific boundary
+
+This remains a finite-compression perturbation calculation. It does not identify these finite generalized-prolate crossings with zeta zeros and does not imply the Riemann hypothesis.

@@ -6,3 +6,8 @@ edition = "2024"
 [dependencies]
 faer = { version = "0.24.4", default-features = false, features = ["std", "rayon"] }
 num-complex = "0.4.6"
+
+[[test]]
+name = "semilocal_high_m_diagnostics"
+path = "tests/semilocal_high_m_diagnostics.rs"
+harness = false
