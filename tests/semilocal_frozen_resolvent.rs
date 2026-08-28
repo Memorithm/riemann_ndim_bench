@@ -32,8 +32,7 @@ fn frozen_symbol_quadrature(row: usize, parity: ProlateParity, shift: f64) -> f6
 
     for panel in 0..=panels {
         let theta = panel as f64 * step;
-        let integrand =
-            (d - 2.0 * o * theta.cos()) / (a - 2.0 * b * theta.cos()) / (2.0 * PI);
+        let integrand = (d - 2.0 * o * theta.cos()) / (a - 2.0 * b * theta.cos()) / (2.0 * PI);
         let weight = if panel == 0 || panel == panels {
             1.0
         } else if panel % 2 == 0 {
