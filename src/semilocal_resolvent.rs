@@ -1,23 +1,22 @@
-//! O(m) shifted resolvent trace for the finite semilocal prolate blocks.
+//! O(m) shifted resolvent tools for the finite semilocal prolate blocks.
 //!
 //! The Phase-4 soft-edge proof route rewrites the singular square-root trace
 //! through the exact finite-dimensional resolvent identity. This module
-//! supplies the corresponding finite tridiagonal kernel without forming an
-//! inverse matrix or computing eigenvectors.
+//! supplies finite tridiagonal kernels without forming a dense inverse.
 
 use std::fmt;
 
 use crate::semilocal::{ProlateParity, build_k0, build_kprime_closed};
 
-/// Error returned by the shifted tridiagonal resolvent trace.
+/// Error returned by the shifted tridiagonal resolvent calculations.
 #[derive(Debug)]
 pub enum ResolventTraceError {
     /// The shift in `K + t I` must be finite and non-negative.
     InvalidShift { value: f64 },
     /// A row-local frozen model requires both neighboring edges.
     InvalidInteriorRow { row: usize, len: usize },
-    /// A non-positive or non-finite LDL pivot would violate positive
-    /// definiteness of the shifted finite matrix.
+    /// A non-positive or non-finite Schur/LDL denominator would violate
+    /// positive definiteness of the shifted finite matrix.
     NonPositivePivot { index: usize, value: f64 },
     /// The frozen Toeplitz denominator must stay strictly positive.
     NonPositiveFrozenDiscriminant { row: usize, value: f64 },
@@ -38,7 +37,7 @@ impl fmt::Display for ResolventTraceError {
             ),
             Self::NonPositivePivot { index, value } => write!(
                 f,
-                "shifted tridiagonal LDL pivot at index {index} is not positive: {value:e}"
+                "shifted tridiagonal Schur/LDL denominator at index {index} is not positive: {value:e}"
             ),
             Self::NonPositiveFrozenDiscriminant { row, value } => write!(
                 f,
@@ -63,6 +62,42 @@ fn checked_pivot(index: usize, value: f64) -> Result<f64, ResolventTraceError> {
         Ok(value)
     } else {
         Err(ResolventTraceError::NonPositivePivot { index, value })
+    }
+}
+
+/// Exact finite Green-function data reconstructed from left/right Schur
+/// complements of a shifted positive tridiagonal matrix.
+#[derive(Clone, Debug)]
+pub struct CavityGreenBands {
+    left_denominators: Vec<f64>,
+    right_denominators: Vec<f64>,
+    diagonal: Vec<f64>,
+    off_diagonal: Vec<f64>,
+}
+
+impl CavityGreenBands {
+    /// Left-to-right cavity denominators.
+    #[inline]
+    pub fn left_denominators(&self) -> &[f64] {
+        &self.left_denominators
+    }
+
+    /// Right-to-left cavity denominators.
+    #[inline]
+    pub fn right_denominators(&self) -> &[f64] {
+        &self.right_denominators
+    }
+
+    /// Diagonal of `(K+tI)^(-1)`.
+    #[inline]
+    pub fn diagonal(&self) -> &[f64] {
+        &self.diagonal
+    }
+
+    /// First upper/lower off-diagonal of `(K+tI)^(-1)`.
+    #[inline]
+    pub fn off_diagonal(&self) -> &[f64] {
+        &self.off_diagonal
     }
 }
 
@@ -147,6 +182,84 @@ impl SignCorrectedResolventTraceKernel {
         }
 
         Ok((inverse_diagonal, inverse_off_diagonal))
+    }
+
+    /// Reconstruct the exact finite Green diagonal and first off-diagonal from
+    /// independent left/right Schur-complement continued fractions.
+    ///
+    /// For shifted diagonal `a_i` and edge `b_i`, define
+    ///
+    /// `L_0=a_0`, `L_i=a_i-b_{i-1}^2/L_{i-1}`
+    ///
+    /// and
+    ///
+    /// `R_{m-1}=a_{m-1}`, `R_i=a_i-b_i^2/R_{i+1}`.
+    ///
+    /// Then the exact finite Green diagonal is
+    ///
+    /// `G_ii = 1/(a_i-b_{i-1}^2/L_{i-1}-b_i^2/R_{i+1})`,
+    ///
+    /// with absent boundary terms omitted, and
+    ///
+    /// `G_i,i+1 = -b_i G_ii/R_{i+1}`.
+    ///
+    /// The two cavity recurrences explicitly retain both finite-section
+    /// boundaries. No frozen/local approximation is used.
+    pub fn cavity_green_bands(&self, shift: f64) -> Result<CavityGreenBands, ResolventTraceError> {
+        checked_shift(shift)?;
+        if self.is_empty() {
+            return Ok(CavityGreenBands {
+                left_denominators: Vec::new(),
+                right_denominators: Vec::new(),
+                diagonal: Vec::new(),
+                off_diagonal: Vec::new(),
+            });
+        }
+
+        let n = self.len();
+        let mut left = vec![0.0; n];
+        let mut right = vec![0.0; n];
+
+        left[0] = checked_pivot(0, self.diagonal[0] + shift)?;
+        for i in 1..n {
+            let edge = self.off_diagonal[i - 1];
+            let denominator = self.diagonal[i] + shift - edge * edge / left[i - 1];
+            left[i] = checked_pivot(i, denominator)?;
+        }
+
+        let last = n - 1;
+        right[last] = checked_pivot(last, self.diagonal[last] + shift)?;
+        for i in (0..last).rev() {
+            let edge = self.off_diagonal[i];
+            let denominator = self.diagonal[i] + shift - edge * edge / right[i + 1];
+            right[i] = checked_pivot(i, denominator)?;
+        }
+
+        let mut diagonal = vec![0.0; n];
+        for i in 0..n {
+            let mut denominator = self.diagonal[i] + shift;
+            if i > 0 {
+                let edge = self.off_diagonal[i - 1];
+                denominator -= edge * edge / left[i - 1];
+            }
+            if i + 1 < n {
+                let edge = self.off_diagonal[i];
+                denominator -= edge * edge / right[i + 1];
+            }
+            diagonal[i] = 1.0 / checked_pivot(i, denominator)?;
+        }
+
+        let mut off_diagonal = vec![0.0; n.saturating_sub(1)];
+        for i in 0..off_diagonal.len() {
+            off_diagonal[i] = -self.off_diagonal[i] * diagonal[i] / right[i + 1];
+        }
+
+        Ok(CavityGreenBands {
+            left_denominators: left,
+            right_denominators: right,
+            diagonal,
+            off_diagonal,
+        })
     }
 
     /// Exact row contributions to `Tr[(K(0) + shift I)^(-1) H]`.
