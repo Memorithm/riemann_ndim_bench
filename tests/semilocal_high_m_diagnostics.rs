@@ -110,8 +110,14 @@ fn run() -> Result<(), Box<dyn Error>> {
     print_optional_u64("process_peak_rss_kib", peak_rss_kib);
     print_parity("wplus", &plus_summary);
     print_parity("wminus", &minus_summary);
-    println!("merged_total_abs_derivative={:.15e}", response.total_abs_derivative);
-    println!("merged_m_mean_abs={:.15e}", BLOCK_SIZE as f64 * response.mean_abs);
+    println!(
+        "merged_total_abs_derivative={:.15e}",
+        response.total_abs_derivative
+    );
+    println!(
+        "merged_m_mean_abs={:.15e}",
+        BLOCK_SIZE as f64 * response.mean_abs
+    );
     println!(
         "merged_m_trimmed_mean_abs={:.15e}",
         BLOCK_SIZE as f64 * response.trimmed_mean_abs
@@ -192,8 +198,8 @@ fn summarize_response(
         .fold(0.0_f64, f64::max);
     let trim = values.len() / 8;
     let trimmed = &values[trim..values.len() - trim];
-    let trimmed_mean_abs = trimmed.iter().map(|value| value.abs()).sum::<f64>()
-        / trimmed.len() as f64;
+    let trimmed_mean_abs =
+        trimmed.iter().map(|value| value.abs()).sum::<f64>() / trimmed.len() as f64;
     let total_abs_derivative = merged
         .iter()
         .map(|crossing| crossing.lambda_prime.abs())
@@ -281,14 +287,8 @@ fn print_parity(label: &str, summary: &ParitySummary) {
         "{label}_min_rayleigh_denominator={:.15e}",
         2.0 * summary.min_lambda
     );
-    println!(
-        "{label}_min_lambda_prime={:.15e}",
-        summary.min_lambda_prime
-    );
-    println!(
-        "{label}_max_lambda_prime={:.15e}",
-        summary.max_lambda_prime
-    );
+    println!("{label}_min_lambda_prime={:.15e}", summary.min_lambda_prime);
+    println!("{label}_max_lambda_prime={:.15e}", summary.max_lambda_prime);
     println!(
         "{label}_negative_derivatives={}",
         summary.negative_derivatives
