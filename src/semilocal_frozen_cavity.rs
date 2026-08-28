@@ -122,15 +122,12 @@ pub fn frozen_row_cavity_fixed_point(
     let sign = parity.sign_correction();
 
     let diagonal_coefficient = k0.diagonal()[row] + shift;
-    let edge_coefficient =
-        0.5 * (k0.off_diagonal()[row - 1] + k0.off_diagonal()[row]);
+    let edge_coefficient = 0.5 * (k0.off_diagonal()[row - 1] + k0.off_diagonal()[row]);
     let weight_diagonal = sign * kprime.diagonal()[row];
-    let weight_edge =
-        0.5 * sign * (kprime.off_diagonal()[row - 1] + kprime.off_diagonal()[row]);
+    let weight_edge = 0.5 * sign * (kprime.off_diagonal()[row - 1] + kprime.off_diagonal()[row]);
 
     let twice_edge = 2.0 * edge_coefficient;
-    let discriminant =
-        (diagonal_coefficient - twice_edge) * (diagonal_coefficient + twice_edge);
+    let discriminant = (diagonal_coefficient - twice_edge) * (diagonal_coefficient + twice_edge);
     if !discriminant.is_finite() || discriminant <= 0.0 {
         return Err(ResolventTraceError::NonPositiveFrozenDiscriminant {
             row,
