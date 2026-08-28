@@ -92,18 +92,15 @@ impl SignCorrectedResolventTraceKernel {
         self.diagonal.is_empty()
     }
 
-    /// Compute `Tr[(K(0) + shift I)^(-1) H]`.
-    ///
-    /// The implementation uses an LDL factorization followed by selected
-    /// inversion recurrences for only the diagonal and first off-diagonal
-    /// entries of the inverse. Since `H` is tridiagonal, those entries are
-    /// sufficient for the trace.
-    pub fn trace(&self, shift: f64) -> Result<f64, ResolventTraceError> {
+    fn selected_inverse_bands(
+        &self,
+        shift: f64,
+    ) -> Result<(Vec<f64>, Vec<f64>), ResolventTraceError> {
         if !shift.is_finite() || shift < 0.0 {
             return Err(ResolventTraceError::InvalidShift { value: shift });
         }
         if self.is_empty() {
-            return Ok(0.0);
+            return Ok((Vec::new(), Vec::new()));
         }
 
         let block_size = self.len();
@@ -120,23 +117,48 @@ impl SignCorrectedResolventTraceKernel {
         }
 
         let mut inverse_diagonal = vec![0.0; block_size];
+        let mut inverse_off_diagonal = vec![0.0; block_size.saturating_sub(1)];
         let last = block_size - 1;
         inverse_diagonal[last] = 1.0 / pivots[last];
-
-        let mut trace = self.h_diagonal[last] * inverse_diagonal[last];
 
         for i in (0..last).rev() {
             let multiplier = multipliers[i];
             let next_inverse_diagonal = inverse_diagonal[i + 1];
-            let inverse_off_diagonal = -multiplier * next_inverse_diagonal;
-
+            inverse_off_diagonal[i] = -multiplier * next_inverse_diagonal;
             inverse_diagonal[i] = 1.0 / pivots[i] + multiplier * multiplier * next_inverse_diagonal;
-
-            trace += self.h_diagonal[i] * inverse_diagonal[i]
-                + 2.0 * self.h_off_diagonal[i] * inverse_off_diagonal;
         }
 
-        Ok(trace)
+        Ok((inverse_diagonal, inverse_off_diagonal))
+    }
+
+    /// Exact row contributions to `Tr[(K(0) + shift I)^(-1) H]`.
+    ///
+    /// Row `i` is `(R H)_{ii}` for `R=(K(0)+shift I)^(-1)`:
+    /// `R_ii H_ii + R_i,i-1 H_i-1,i + R_i,i+1 H_i+1,i`.
+    /// Summing the returned vector therefore recovers the full weighted trace
+    /// exactly up to floating-point summation order. This row resolution is a
+    /// finite identity; no local-symbol or large-m approximation is used.
+    pub fn row_contributions(&self, shift: f64) -> Result<Vec<f64>, ResolventTraceError> {
+        let (inverse_diagonal, inverse_off_diagonal) = self.selected_inverse_bands(shift)?;
+        let mut rows = Vec::with_capacity(self.len());
+
+        for i in 0..self.len() {
+            let mut contribution = self.h_diagonal[i] * inverse_diagonal[i];
+            if i > 0 {
+                contribution += self.h_off_diagonal[i - 1] * inverse_off_diagonal[i - 1];
+            }
+            if i + 1 < self.len() {
+                contribution += self.h_off_diagonal[i] * inverse_off_diagonal[i];
+            }
+            rows.push(contribution);
+        }
+
+        Ok(rows)
+    }
+
+    /// Compute `Tr[(K(0) + shift I)^(-1) H]` in O(m) time and storage.
+    pub fn trace(&self, shift: f64) -> Result<f64, ResolventTraceError> {
+        Ok(self.row_contributions(shift)?.into_iter().sum())
     }
 }
 
