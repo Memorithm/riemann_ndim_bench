@@ -15,7 +15,12 @@ fn assert_close_scaled(actual: f64, expected: f64, relative: f64, absolute: f64,
 #[test]
 fn finite_cavity_errors_split_exactly_into_transport_and_drift() {
     for block_size in [16_usize, 64, 256] {
-        let rows = [2_usize, block_size / 4, block_size / 2, block_size - 3];
+        let rows = [
+            4_usize,
+            (block_size / 4).max(4),
+            block_size / 2,
+            block_size - 4,
+        ];
         for parity in [ProlateParity::WPlus, ProlateParity::WMinus] {
             for shift in [0.0_f64, 1.0e-8, 1.0e-4, 1.0] {
                 for row in rows {
@@ -102,6 +107,14 @@ fn cavity_transport_requires_two_interior_neighbors() {
             Err(ResolventTraceError::InvalidInteriorRow { .. })
         ));
     }
+}
+
+#[test]
+fn cavity_transport_reports_exceptional_nonpositive_frozen_rows() {
+    assert!(matches!(
+        cavity_error_transport(16, 2, ProlateParity::WPlus, 0.0),
+        Err(ResolventTraceError::NonPositiveFrozenDiscriminant { row: 1, .. })
+    ));
 }
 
 #[test]
