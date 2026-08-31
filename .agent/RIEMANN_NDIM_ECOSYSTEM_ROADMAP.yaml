@@ -1,0 +1,149 @@
+schema_version: 1
+kind: riemann_ndim_ecosystem_agent_roadmap
+status: active
+last_updated: "2026-08-31"
+repository: Memorithm/riemann_ndim_bench
+intended_consumer: autonomous_coding_agent
+merge_policy: never_merge_this_file_to_default_branch_unless_user_explicitly_requests
+
+mission:
+  primary: >-
+    Advance the finite-dimensional operator and asymptotic research programme
+    around Riemann-inspired prolate/semilocal constructions while preserving a
+    strict separation between exact mathematics, verified numerical computation,
+    formal/asymptotic derivation, heuristic evidence, and any statement about the
+    Riemann hypothesis.
+  near_term: >-
+    Exploit the exact ground-state factorization and free-Laplacian soft-edge
+    structure to seek uniform control of Tr(T_m^(-1/2) H_m), with independent
+    numerical and mathematical checks.
+  ecosystem_goal: >-
+    Supply reusable spectral/operator constructions and independently meaningful
+    structured-operator hypotheses to SciRust, ADA/TDI/ITD or other research
+    projects only after their generality and scope are explicit; never export a
+    Riemann-inspired heuristic as a theorem or attention result.
+
+scientific_invariants:
+  - repository_does_not_claim_a_proof_of_the_Riemann_hypothesis
+  - finite_matrix_crossings_are_not_identified_with_zeta_zeros_without_a_proved_bridge
+  - numerical_extrapolation_is_not_a_proof
+  - exact_identity_numerical_validation_formal_derivation_and_heuristic_must_be_labeled_separately
+  - observed_signatures_should_survive_dimension_precision_discretization_summation_and_independent_implementation_checks_when_applicable
+  - cancellation_contaminated_finite_differences_are_rejected_not_fit_away
+  - source_locked_literature_formulas_must_retain_citation_and_convention_provenance
+  - required_CI_must_be_green_on_exact_PR_head_before_merge
+
+ownership:
+  role: mathematical_numerical_operator_research_bench
+  owns:
+    - Riemann_inspired_prolate_semilocal_research_lineage
+    - exact_and_numerical_operator_fixtures_specific_to_this_programme
+    - asymptotic_hypotheses_derivations_and_negative_results
+    - high_dimension_checkpoint_and_independent_method_validation
+  does_not_own:
+    - SciRust_general_linear_algebra_spectral_or_special_function_ownership
+    - TDI_dynamic_information_semantics
+    - ADA_or_FLAT_attention_semantics
+    - SciRust_Verify_general_evidence_verdict_semantics
+
+evidence_classes:
+  theorem_or_exact_identity:
+    requirement: complete_derivation_with_stated_assumptions_and_no_numerical_gap_presented_as_proof
+  source_locked_reproduction:
+    requirement: exact_reference_conventions_and_reproduction_tolerance_recorded
+  numerical_validation:
+    requirement: method_precision_dimension_error_and_independent_cross_check_recorded
+  asymptotic_derivation:
+    requirement: state_uniformity_or_unproved_exchange_of_limits_explicitly
+  heuristic:
+    requirement: cannot_be_promoted_to_theorem_by_repetition_or_fit_quality
+
+ecosystem_interfaces:
+  Memorithm/scirust:
+    relationship: promotion_target_for_general_spectral_special_function_linear_algebra_or_operator_primitives
+    status: active_direction
+    contract:
+      - promote_only_general_reusable_primitives_with_independent_tests
+      - keep_Riemann_specific_hypotheses_and_scientific_interpretation_here
+  Memorithm/TDI:
+    relationship: structured_operator_hypothesis_source_only
+    status: documented_research_relationship
+    rule: RiemannBench_does_not_supply_TDI_semantics_or_evidence_of_attention_utility
+  Memorithm/ADA:
+    relationship: optional_source_of_mathematically_defined_structured_attention_candidate_families
+    status: conditional_research
+    rule: any_candidate_enters_ADA_from_zero_with_attention_specific_oracle_adversarial_and_prior_art_gates
+  Memorithm/FLAT-ATTENTION:
+    relationship: no_direct_promotion_from_RiemannBench
+    status: none_without_ADA_or_equivalent_qualification
+  Memorithm/itd-simulator:
+    relationship: optional_comparative_harness_for_structured_operator_hypotheses
+    status: conditional
+  Memorithm/SciRust-Verify:
+    relationship: future_reproducibility_and_evidence_sealing
+    status: planned
+    rule: Verify_must_preserve_the_evidence_class_and_never_upgrade_numeric_to_proof
+
+roadmap:
+  - id: RB0
+    name: Exact current-lineage audit
+    status: active
+    goals:
+      - reconcile_local_implementation_manifest_with_current_upstream_code
+      - identify_which_Thor_validated_slices_are_not_cleanly_upstreamed
+      - preserve_exact_reference_and_checkpoint_provenance
+  - id: RB1
+    name: Uniform trace-control programme
+    status: active_priority
+    goals:
+      - use_T_inverse_equals_R_R_transpose_factorization
+      - exploit_Hardy_Copson_triangular_structure
+      - derive_upper_and_lower_bounds_uniform_in_dimension
+      - separate_bulk_soft_edge_and_fixed_rank_boundary_contributions
+      - verify_every_intermediate_formula_against_finite_dimensional_exact_or_high_precision_checks
+  - id: RB2
+    name: Independent spectral verification
+    status: active
+    goals:
+      - dense_vs_tridiagonal_or_structure_exploiting_cross_checks
+      - precision_and_step_window_studies
+      - high_dimension_eigenvalue_only_checks_with_cancellation_detection
+      - independent_implementation_or_symbolic_checks_for_critical_formulas
+  - id: RB3
+    name: Proof-candidate discipline
+    status: planned_if_RB1_closes_uniform_gaps
+    goals:
+      - enumerate_every_remaining_unproved_limit_interchange_uniform_bound_and_domain_assumption
+      - prohibit_claim_language_stronger_than_the_weakest_open_gap
+      - external_literature_and_mathematical_review_before_any_theorem_status_change
+  - id: RB4
+    name: SciRust primitive promotion
+    status: ongoing
+    goals:
+      - extract_general_high_precision_spectral_Toeplitz_Jacobi_or_special_function_tools_only_when_reusable
+      - preserve_reference_oracle_tests
+      - avoid_importing_Riemann_hypotheses_into_general_SciRust_APIs
+  - id: RB5
+    name: Structured-operator AI hypothesis export
+    status: conditional
+    goals:
+      - publish_frozen_mathematical_operator_definitions_not_performance_claims
+      - route_attention_hypotheses_through_ADA_or_equivalent_falsification
+      - use_TDI_or_ITD_only_for_new_independent_AI_experiments
+      - retain_failed_AI_transfers_as_negative_results
+
+agent_operating_protocol:
+  must_read_this_file:
+    - at_start_of_every_agent_session
+    - before_any_proof_or_asymptotic_claim_change
+    - before_high_dimension_checkpoint_promotion
+    - before_SciRust_ADA_TDI_or_ITD_integration
+    - before_PR_or_merge_decisions
+  must_update_this_file:
+    - when_a_formal_gap_is_closed_opened_or_reclassified
+    - when_a_checkpoint_or_asymptotic_candidate_is_accepted_or_rejected
+    - when_cross_repository_promotion_status_changes
+  fail_closed: >-
+    If this roadmap cannot be read, do not make major mathematical-claim,
+    asymptotic-promotion, cross-repository, or merge decisions. Read-only diagnosis
+    and reproduction are allowed.
