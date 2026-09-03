@@ -28,8 +28,7 @@ fn source_derived_local_series_track_exact_k0_coefficients() {
             let gap = diagonal - 2.0 * edge;
             let fixed = frozen_row_cavity_fixed_point(block_size, row, parity, 0.0).unwrap();
 
-            let diagonal_residual =
-                diagonal - frozen_diagonal_second_order(degree).unwrap();
+            let diagonal_residual = diagonal - frozen_diagonal_second_order(degree).unwrap();
             let edge_residual = edge - frozen_edge_second_order(degree).unwrap();
             let gap_residual = gap - frozen_soft_gap_second_order(degree).unwrap();
             let cavity_residual = fixed.cavity_denominator()
