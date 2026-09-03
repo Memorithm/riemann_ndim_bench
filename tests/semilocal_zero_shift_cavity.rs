@@ -22,10 +22,10 @@ fn exact_closed_form_matches_recursive_zero_shift_left_cavity() {
             let cavity = kernel.cavity_green_bands(0.0).unwrap();
             let closed = zero_shift_left_cavity_denominators(block_size, parity);
 
-            for row in 0..block_size {
+            for (row, expected) in closed.iter().copied().enumerate() {
                 assert_close_scaled(
                     cavity.left_denominators()[row],
-                    closed[row],
+                    expected,
                     2.0e-12,
                     2.0e-13,
                     &format!("m={block_size} row={row} parity={parity:?}"),
