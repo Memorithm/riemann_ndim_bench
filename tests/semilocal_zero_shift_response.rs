@@ -26,14 +26,15 @@ fn exact_shift_derivative_matches_differentiated_schur_recurrence() {
             let k0 = build_k0(block_size, parity);
             let left = zero_shift_left_cavity_denominators(block_size, parity);
             let closed = zero_shift_left_cavity_shift_derivatives(block_size, parity);
-            let mut recursive = vec![0.0; block_size];
+            let mut recursive = Vec::with_capacity(block_size);
 
             if block_size > 0 {
-                recursive[0] = 1.0;
-                for row in 1..block_size {
-                    let edge = k0.off_diagonal()[row - 1];
-                    recursive[row] = 1.0
-                        + edge * edge / (left[row - 1] * left[row - 1]) * recursive[row - 1];
+                let mut derivative = 1.0;
+                recursive.push(derivative);
+                for (edge, previous_left) in k0.off_diagonal().iter().zip(left.iter()) {
+                    derivative = 1.0
+                        + edge * edge / (previous_left * previous_left) * derivative;
+                    recursive.push(derivative);
                 }
             }
 
