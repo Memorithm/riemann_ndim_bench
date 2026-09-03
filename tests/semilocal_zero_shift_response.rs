@@ -32,8 +32,7 @@ fn exact_shift_derivative_matches_differentiated_schur_recurrence() {
                 let mut derivative = 1.0;
                 recursive.push(derivative);
                 for (edge, previous_left) in k0.off_diagonal().iter().zip(left.iter()) {
-                    derivative = 1.0
-                        + edge * edge / (previous_left * previous_left) * derivative;
+                    derivative = 1.0 + edge * edge / (previous_left * previous_left) * derivative;
                     recursive.push(derivative);
                 }
             }
