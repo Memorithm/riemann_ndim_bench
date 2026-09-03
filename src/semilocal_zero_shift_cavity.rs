@@ -85,10 +85,7 @@ pub fn zero_shift_left_cavity_closed_form(
 /// Generate the exact zero-shift left cavity prefix for one finite parity
 /// block. The values are independent of the block's right endpoint; the block
 /// size only chooses how many rows are returned.
-pub fn zero_shift_left_cavity_denominators(
-    block_size: usize,
-    parity: ProlateParity,
-) -> Vec<f64> {
+pub fn zero_shift_left_cavity_denominators(block_size: usize, parity: ProlateParity) -> Vec<f64> {
     (0..block_size)
         .map(|row| zero_shift_left_cavity_closed_form(row, parity).denominator())
         .collect()
