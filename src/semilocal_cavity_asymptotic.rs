@@ -66,9 +66,7 @@ impl FrozenContractionAsymptoticDiagnostic {
 pub fn frozen_diagonal_second_order(degree: usize) -> Option<f64> {
     let degree = nonzero_degree(degree)?;
     Some(
-        degree / (4.0 * PI)
-            + 1.0 / (16.0 * PI)
-            + 5.0 / (64.0 * PI * degree)
+        degree / (4.0 * PI) + 1.0 / (16.0 * PI) + 5.0 / (64.0 * PI * degree)
             - 5.0 / (256.0 * PI * degree * degree),
     )
 }
@@ -79,9 +77,7 @@ pub fn frozen_diagonal_second_order(degree: usize) -> Option<f64> {
 pub fn frozen_edge_second_order(degree: usize) -> Option<f64> {
     let degree = nonzero_degree(degree)?;
     Some(
-        degree / (8.0 * PI)
-            + 1.0 / (32.0 * PI)
-            + 3.0 / (128.0 * PI * degree)
+        degree / (8.0 * PI) + 1.0 / (32.0 * PI) + 3.0 / (128.0 * PI * degree)
             - 3.0 / (512.0 * PI * degree * degree),
     )
 }
@@ -100,9 +96,7 @@ pub fn frozen_soft_gap_second_order(degree: usize) -> Option<f64> {
 pub fn frozen_cavity_denominator_second_order(degree: usize) -> Option<f64> {
     let degree = nonzero_degree(degree)?;
     Some(
-        degree / (8.0 * PI)
-            + 3.0 / (32.0 * PI)
-            + 5.0 / (128.0 * PI * degree)
+        degree / (8.0 * PI) + 3.0 / (32.0 * PI) + 5.0 / (128.0 * PI * degree)
             - 49.0 / (512.0 * PI * degree * degree),
     )
 }
