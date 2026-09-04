@@ -30,11 +30,7 @@ pub struct MultiplicativeSupport {
 impl MultiplicativeSupport {
     /// Construct a finite non-empty multiplicative support interval.
     pub fn new(lower: f64, upper: f64) -> Result<Self, WeilBoundaryError> {
-        if !lower.is_finite()
-            || !upper.is_finite()
-            || lower <= 0.0
-            || upper <= lower
-        {
+        if !lower.is_finite() || !upper.is_finite() || lower <= 0.0 || upper <= lower {
             return Err(WeilBoundaryError::InvalidSupport { lower, upper });
         }
         Ok(Self {
@@ -130,10 +126,7 @@ pub fn q_from_rho_derivatives(
 ) -> Result<f64, WeilBoundaryError> {
     checked_rho(rho)?;
     let second_log_derivative = rho * rho * second_derivative + rho * first_derivative;
-    Ok(q_from_log_second_derivative(
-        value,
-        second_log_derivative,
-    ))
+    Ok(q_from_log_second_derivative(value, second_log_derivative))
 }
 
 /// Apply `Q` on a declared compact support interval, returning exact zero
@@ -152,10 +145,7 @@ pub fn q_on_support(
         return Ok(0.0);
     }
     let (value, second_log_derivative) = value_and_second_log_derivative(rho);
-    Ok(q_from_log_second_derivative(
-        value,
-        second_log_derivative,
-    ))
+    Ok(q_from_log_second_derivative(value, second_log_derivative))
 }
 
 /// Multiplicative Mellin-power moment
