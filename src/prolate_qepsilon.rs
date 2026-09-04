@@ -38,7 +38,10 @@ impl fmt::Display for ProlateQepsilonError {
                 "prolate mode count must satisfy 1 <= count <= order: order={order}, count={count}"
             ),
             Self::InvalidRho { rho } => {
-                write!(f, "Q epsilon source evaluation requires finite rho >= 1: {rho}")
+                write!(
+                    f,
+                    "Q epsilon source evaluation requires finite rho >= 1: {rho}"
+                )
             }
             Self::Quadrature(error) => write!(f, "quadrature construction failed: {error:?}"),
             Self::Eigensolver(error) => write!(f, "prolate eigensolver failed: {error}"),
@@ -247,12 +250,8 @@ impl ProlateQepsilonKernel {
             * span;
 
         Ok(rho.sqrt() * integral
-            + rho.powf(-1.5)
-                * self.basis.derivative(mode, lower)
-                * self.basis.value(mode, 1.0)
-            - rho.powf(1.5)
-                * self.basis.value(mode, 1.0)
-                * self.basis.derivative(mode, rho))
+            + rho.powf(-1.5) * self.basis.derivative(mode, lower) * self.basis.value(mode, 1.0)
+            - rho.powf(1.5) * self.basis.value(mode, 1.0) * self.basis.derivative(mode, rho))
     }
 
     /// Evaluate the retained source series `Q epsilon(rho)` for `rho >= 1`.
@@ -276,14 +275,9 @@ impl ProlateQepsilonKernel {
     ///
     /// `log_distance` is mapped to `rho = exp(|log_distance|)` using the source
     /// symmetry around `rho=1`.
-    pub fn normalized_log_kernel(
-        &self,
-        log_distance: f64,
-    ) -> Result<f64, ProlateQepsilonError> {
+    pub fn normalized_log_kernel(&self, log_distance: f64) -> Result<f64, ProlateQepsilonError> {
         if !log_distance.is_finite() {
-            return Err(ProlateQepsilonError::InvalidRho {
-                rho: log_distance,
-            });
+            return Err(ProlateQepsilonError::InvalidRho { rho: log_distance });
         }
         self.normalized_q_epsilon(log_distance.abs().exp())
     }
