@@ -12,6 +12,8 @@ Ce dépôt **ne contient pas de preuve de l'hypothèse de Riemann**.
 
 Les calculs actuels portent sur des compressions finies d'opérateurs de type prolate/semilocal inspirés des travaux de Connes, Consani et Moscovici. Les paramètres de croisement de ces matrices finies ne sont pas identifiés aux zéros de `zeta`, et aucune extrapolation numérique n'est considérée comme une preuve.
 
+Le graphe de dépendances vers RH et les frontières de portée du banc sont audités dans [`docs/RH_PROOF_DEPENDENCY_AUDIT.md`](docs/RH_PROOF_DEPENDENCY_AUDIT.md).
+
 ## État du banc
 
 ### Phase 0–2 — fondation et noyau numérique
@@ -48,7 +50,8 @@ Résultats actuellement établis à dimension finie dans le banc :
 - factorisation exacte par état fondamental et noyau d'inverse fini explicite ;
 - validation spectrale du modèle de Laplacien libre au soft edge ;
 - loi fixe-rang numérique `lambda_j * 4 sqrt(pi m)/pi -> j+1` ;
-- première correction de bord compatible avec `m -> m + (4 epsilon + 1)/8`, laissant un résidu fixe-rang compatible avec `O(m^-2)`.
+- première correction de bord compatible avec `m -> m + (4 epsilon + 1)/8`, laissant un résidu fixe-rang compatible avec `O(m^-2)` ;
+- formules exactes de cavité de Schur à shift nul et de sa première réponse au shift.
 
 Documentation Phase 4 :
 
@@ -107,27 +110,41 @@ La constante
 1/(2*pi^2) = 0.05066059182116...
 ```
 
-est désormais motivée par les coefficients locaux du soft edge et pas seulement par un fit numérique. La dérivation globale reste formelle tant que la trace singulière `Tr(T_m^(-1/2) H_m)` n'est pas contrôlée uniformément.
+est motivée par les coefficients locaux du soft edge et pas seulement par un fit numérique. La dérivation globale reste formelle. Le contrôle générique des résolvants/Jacobi lentement variables n'est toutefois plus le verrou directeur de ce dépôt : cette théorie est extraite vers la ligne opératorielle TDI-10.xx lorsqu'elle peut être formulée indépendamment de Riemann.
 
-## Prochaine cible
+## Prochaine cible Riemann
 
-La priorité est maintenant d'exploiter la factorisation exacte
+La priorité est maintenant de **source-locker le pont semilocal vers la positivité de Weil**.
 
-```text
-T_m^(-1) = R_m R_m^T
-```
+Le banc doit déterminer précisément :
 
-avec l'opérateur triangulaire de Hardy/Copson explicite `R_m`, la validation du Laplacien libre au bas du spectre et la correction de bord fixe-rang, afin d'obtenir un contrôle uniforme de
+1. quel espace de fonctions test et quelle fenêtre de support sont concernés ;
+2. quelle inégalité ou positivité opératorielle semilocale serait suffisante ;
+3. quel rôle exact jouent le Sonin space, les projections de cutoff, `Q epsilon`, l'opérateur prolate semilocal et l'augmentation de l'ensemble fini de places `S` ;
+4. quelles flèches sont des théorèmes de la littérature et lesquelles restent conjecturales ;
+5. quel premier énoncé Riemann-spécifique peut être attaqué ou falsifié par les objets déjà implémentés.
 
-```text
-Tr(T_m^(-1/2) H_m).
-```
+Aucune nouvelle asymptotique de matrice ne doit devenir prioritaire tant que son implication vers ce pont n'est pas documentée.
+
+## Politique d'extraction
+
+Lorsqu'un algorithme ou un lemme découvert ici peut être formulé et testé sans mentionner Riemann, zeta, Weil, Sonin ou la construction prolate semilocale spécifique, il devient candidat à transfert vers le banc approprié.
+
+En particulier :
+
+- théorie générique Jacobi/résolvant/soft-edge -> TDI-10.xx ;
+- noyaux numériques scientifiques génériques mûrs -> SciRust ;
+- recherche automatique d'algorithmes -> Forge ;
+- kernels CUDA/NVIDIA -> NNIS.
+
+RiemannBench conserve l'adaptateur spécifique, les hypothèses à vérifier et la conséquence vers la chaîne RH.
 
 ## Références principales
 
-- Alain Connes, Caterina Consani, Henri Moscovici, *On q-series and the moment problem associated to local factors*, arXiv:2403.01247.
-- Alain Connes, Caterina Consani, Henri Moscovici, *Zeta zeros and prolate wave operators*, arXiv:2310.18423.
+- Alain Connes, Caterina Consani, *The Scaling Hamiltonian*, arXiv:1910.14368.
 - Alain Connes, Caterina Consani, *Weil positivity and Trace formula, the archimedean place*, arXiv:2006.13771.
+- Alain Connes, Caterina Consani, Henri Moscovici, *Zeta zeros and prolate wave operators*, arXiv:2310.18423.
+- Alain Connes, Caterina Consani, Henri Moscovici, *On q-series and the moment problem associated to local factors*, arXiv:2403.01247.
 - Grzegorz Świderski, *Periodic perturbations of unbounded Jacobi matrices III: The soft edge regime*, arXiv:1707.06486.
 
 ## Principe du projet
