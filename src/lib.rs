@@ -11,5 +11,6 @@ pub mod semilocal_tridiagonal;
 pub mod semilocal_zero_shift_cavity;
 pub mod semilocal_zero_shift_response;
 pub mod toeplitz;
+pub mod weil_boundary;
 
 pub use foundation::{CRITICAL_SIGMA, PiRadialGeometry, SpectralPoint};
