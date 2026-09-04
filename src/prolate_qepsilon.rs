@@ -44,7 +44,7 @@ impl fmt::Display for ProlateQepsilonError {
                 )
             }
             Self::Quadrature(error) => write!(f, "quadrature construction failed: {error:?}"),
-            Self::Eigensolver(error) => write!(f, "prolate eigensolver failed: {error}"),
+            Self::Eigensolver(error) => write!(f, "prolate eigensolver failed: {error:?}"),
         }
     }
 }
