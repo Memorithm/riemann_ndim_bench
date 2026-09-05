@@ -18,9 +18,7 @@ fn manufactured_fourier(x: f64) -> f64 {
     COEFFICIENTS
         .into_iter()
         .zip(GAUSSIAN_RATES)
-        .map(|(coefficient, rate)| {
-            coefficient / rate.sqrt() * (-PI * x * x / rate).exp()
-        })
+        .map(|(coefficient, rate)| coefficient / rate.sqrt() * (-PI * x * x / rate).exp())
         .sum()
 }
 
@@ -40,8 +38,7 @@ fn gaussian_tail_bound(scale: f64, transformed: bool, max_m: u64) -> f64 {
             } else {
                 PI * rate * scale * scale
             };
-            amplitude * (-exponent_rate * start * start).exp()
-                / (2.0 * exponent_rate * start)
+            amplitude * (-exponent_rate * start * start).exp() / (2.0 * exponent_rate * start)
         })
         .sum()
 }
