@@ -10,7 +10,7 @@ fn monoid_scaling_is_invisible_to_declared_finite_unit_ball_factors() {
     let factor = ElementaryFiniteBruhatFactor::new(places.clone());
 
     let base = QsRational::new(3, 4, &places).unwrap();
-    for m in monoid.elements_up_to(31) {
+    for m in monoid.elements_through(31) {
         let numerator = 3_i64 * i64::try_from(m).unwrap();
         let scaled = QsRational::new(numerator, 4, &places).unwrap();
 
