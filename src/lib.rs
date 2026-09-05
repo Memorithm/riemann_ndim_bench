@@ -7,6 +7,7 @@ pub mod semilocal_cavity_drift;
 pub mod semilocal_cavity_transport;
 pub mod semilocal_frozen_cavity;
 pub mod semilocal_resolvent;
+pub mod semilocal_trace_contract;
 pub mod semilocal_tridiagonal;
 pub mod semilocal_zero_shift_cavity;
 pub mod semilocal_zero_shift_response;
