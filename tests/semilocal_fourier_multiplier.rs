@@ -2,8 +2,8 @@ use std::f64::consts::PI;
 
 use num_complex::Complex64;
 use riemann_ndim_bench::semilocal_fourier_multiplier::{
-    convergent_dirichlet_prefix, critical_line_dirichlet_exponent,
-    finite_euler_deletion_factor, semilocal_multiplier_from_zeta,
+    convergent_dirichlet_prefix, critical_line_dirichlet_exponent, finite_euler_deletion_factor,
+    semilocal_multiplier_from_zeta,
 };
 use riemann_ndim_bench::semilocal_poisson::SemilocalPoissonMonoid;
 use riemann_ndim_bench::semilocal_trace_contract::FinitePlaceSet;
@@ -25,8 +25,7 @@ fn convergent_semilocal_dirichlet_series_matches_known_euler_deletions() {
     ];
 
     for (finite_primes, target, label) in cases {
-        let monoid =
-            SemilocalPoissonMonoid::new(FinitePlaceSet::new(finite_primes).unwrap());
+        let monoid = SemilocalPoissonMonoid::new(FinitePlaceSet::new(finite_primes).unwrap());
         let prefix = convergent_dirichlet_prefix(&monoid, 2.0, 50_000).unwrap();
         assert_certified_target(prefix.value(), prefix.tail_upper_bound(), target, label);
         assert!(prefix.term_count() >= 1);
@@ -45,8 +44,7 @@ fn finite_euler_factor_multiplies_zeta_two_to_the_same_targets() {
         (vec![2, 3], PI * PI / 9.0),
     ] {
         let places = FinitePlaceSet::new(finite_primes).unwrap();
-        let multiplier =
-            semilocal_multiplier_from_zeta(zeta_two, &places, exponent).unwrap();
+        let multiplier = semilocal_multiplier_from_zeta(zeta_two, &places, exponent).unwrap();
         assert!((multiplier.re - target).abs() < 4.0e-15);
         assert!(multiplier.im.abs() < 4.0e-15);
     }
