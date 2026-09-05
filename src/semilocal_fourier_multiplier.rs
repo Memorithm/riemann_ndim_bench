@@ -64,10 +64,7 @@ pub fn critical_line_dirichlet_exponent(
     t: f64,
 ) -> Result<Complex64, SemilocalFourierMultiplierError> {
     if !t.is_finite() {
-        return Err(SemilocalFourierMultiplierError::InvalidExponent {
-            re: 0.5,
-            im: -t,
-        });
+        return Err(SemilocalFourierMultiplierError::InvalidExponent { re: 0.5, im: -t });
     }
     Ok(Complex64::new(0.5, -t))
 }
@@ -80,9 +77,7 @@ fn positive_integer_negative_power(p: u64, s: Complex64) -> Complex64 {
     Complex64::new(magnitude * angle.cos(), magnitude * angle.sin())
 }
 
-fn checked_exponent(
-    exponent: Complex64,
-) -> Result<Complex64, SemilocalFourierMultiplierError> {
+fn checked_exponent(exponent: Complex64) -> Result<Complex64, SemilocalFourierMultiplierError> {
     if exponent.re.is_finite() && exponent.im.is_finite() {
         Ok(exponent)
     } else {
@@ -106,8 +101,7 @@ pub fn finite_euler_deletion_factor(
     let exponent = checked_exponent(exponent)?;
     let mut product = Complex64::new(1.0, 0.0);
     for &prime in places.finite_primes() {
-        product *= Complex64::new(1.0, 0.0)
-            - positive_integer_negative_power(prime, exponent);
+        product *= Complex64::new(1.0, 0.0) - positive_integer_negative_power(prime, exponent);
     }
     Ok(product)
 }
@@ -174,9 +168,7 @@ pub fn convergent_dirichlet_prefix(
     max_m: u64,
 ) -> Result<ConvergentDirichletPrefix, SemilocalFourierMultiplierError> {
     if !sigma.is_finite() || sigma <= 1.0 {
-        return Err(SemilocalFourierMultiplierError::NonConvergentRealExponent {
-            sigma,
-        });
+        return Err(SemilocalFourierMultiplierError::NonConvergentRealExponent { sigma });
     }
     if max_m == 0 {
         return Err(SemilocalFourierMultiplierError::EmptyPrefix);
@@ -191,8 +183,7 @@ pub fn convergent_dirichlet_prefix(
         }
     }
 
-    let tail_upper_bound =
-        (max_m as f64).powf(1.0 - sigma) / (sigma - 1.0);
+    let tail_upper_bound = (max_m as f64).powf(1.0 - sigma) / (sigma - 1.0);
 
     Ok(ConvergentDirichletPrefix {
         value,
@@ -215,11 +206,7 @@ mod tests {
     #[test]
     fn finite_euler_factor_is_exact_at_real_sigma_two() {
         let places = FinitePlaceSet::new(vec![2, 3]).unwrap();
-        let factor = finite_euler_deletion_factor(
-            &places,
-            Complex64::new(2.0, 0.0),
-        )
-        .unwrap();
+        let factor = finite_euler_deletion_factor(&places, Complex64::new(2.0, 0.0)).unwrap();
         assert!((factor.re - 2.0 / 3.0).abs() < 2.0e-15);
         assert!(factor.im.abs() < 2.0e-15);
     }
