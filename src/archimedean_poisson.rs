@@ -51,7 +51,10 @@ impl fmt::Display for ArchimedeanPoissonError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidScalePoint { x } => {
-                write!(f, "Poisson scale x must be finite and strictly positive: {x}")
+                write!(
+                    f,
+                    "Poisson scale x must be finite and strictly positive: {x}"
+                )
             }
             Self::EmptyPrefix => write!(f, "Poisson E-sum prefix must contain at least one term"),
         }
@@ -93,7 +96,10 @@ pub fn source_poisson_fixture_fourier_value(xi: f64) -> f64 {
 
 /// Boundary value `f(0)`, exposed to keep the source hypothesis auditable.
 pub fn source_poisson_fixture_at_zero() -> f64 {
-    SOURCE_FIXTURE.iter().map(|component| component.coefficient).sum()
+    SOURCE_FIXTURE
+        .iter()
+        .map(|component| component.coefficient)
+        .sum()
 }
 
 /// Boundary value `Ff(0)`, exposed to keep the source hypothesis auditable.
@@ -161,8 +167,7 @@ impl PoissonIdentityComparison {
     /// Sum of the rigorous truncation bounds on both sides.
     #[inline]
     pub fn combined_tail_bound(self) -> f64 {
-        self.e_fourier_at_x.absolute_tail_bound
-            + self.e_original_at_inverse_x.absolute_tail_bound
+        self.e_fourier_at_x.absolute_tail_bound + self.e_original_at_inverse_x.absolute_tail_bound
     }
 }
 
