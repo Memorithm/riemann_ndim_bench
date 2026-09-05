@@ -112,10 +112,12 @@ impl QsRational {
         }
 
         debug_assert_eq!(denominator, 1);
-        debug_assert!(places
-            .finite_primes()
-            .iter()
-            .all(|&prime| !numerator.is_multiple_of(prime)));
+        debug_assert!(
+            places
+                .finite_primes()
+                .iter()
+                .all(|&prime| !numerator.is_multiple_of(prime))
+        );
 
         Ok(QsUnitMonoidDecomposition {
             unit_sign: self.sign,
