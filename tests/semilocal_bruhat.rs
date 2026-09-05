@@ -14,9 +14,18 @@ fn monoid_scaling_is_invisible_to_declared_finite_unit_ball_factors() {
         let numerator = 3_i64 * i64::try_from(m).unwrap();
         let scaled = QsRational::new(numerator, 4, &places).unwrap();
 
-        assert_eq!(factor.diagonal_valuation(base, 2), factor.diagonal_valuation(scaled, 2));
-        assert_eq!(factor.diagonal_valuation(base, 3), factor.diagonal_valuation(scaled, 3));
-        assert_eq!(factor.evaluate_diagonal(base), factor.evaluate_diagonal(scaled));
+        assert_eq!(
+            factor.diagonal_valuation(base, 2),
+            factor.diagonal_valuation(scaled, 2)
+        );
+        assert_eq!(
+            factor.diagonal_valuation(base, 3),
+            factor.diagonal_valuation(scaled, 3)
+        );
+        assert_eq!(
+            factor.evaluate_diagonal(base),
+            factor.evaluate_diagonal(scaled)
+        );
     }
 }
 
