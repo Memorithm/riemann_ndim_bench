@@ -131,7 +131,10 @@ impl fmt::Display for SemilocalPoissonError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidModulus { modulus } => {
-                write!(f, "semilocal modulus must be finite and positive: {modulus}")
+                write!(
+                    f,
+                    "semilocal modulus must be finite and positive: {modulus}"
+                )
             }
         }
     }
