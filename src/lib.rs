@@ -13,5 +13,6 @@ pub mod semilocal_zero_shift_cavity;
 pub mod semilocal_zero_shift_response;
 pub mod toeplitz;
 pub mod weil_boundary;
+pub mod weil_support;
 
 pub use foundation::{CRITICAL_SIGMA, PiRadialGeometry, SpectralPoint};
