@@ -68,8 +68,10 @@ fn diagonal_membership_matches_exact_p_adic_valuation_thresholds() {
     assert!(!PadicBall::new(3, 3, &places).unwrap().contains_diagonal(q));
 
     for exponent in [-10_i32, 0, 10] {
-        assert!(PadicBall::new(2, exponent, &places)
-            .unwrap()
-            .contains_diagonal(zero));
+        assert!(
+            PadicBall::new(2, exponent, &places)
+                .unwrap()
+                .contains_diagonal(zero)
+        );
     }
 }
