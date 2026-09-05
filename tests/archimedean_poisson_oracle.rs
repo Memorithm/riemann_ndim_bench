@@ -14,7 +14,8 @@ fn source_poisson_identity_is_certified_across_reciprocal_scales() {
     for x in [0.5_f64, 0.75, 1.0, 1.5, 2.0] {
         let comparison = compare_source_poisson_identity(x, 32).unwrap();
         let truncation = comparison.combined_tail_bound();
-        let roundoff = 64.0 * f64::EPSILON
+        let roundoff = 64.0
+            * f64::EPSILON
             * comparison
                 .left()
                 .value()
