@@ -183,10 +183,16 @@ impl fmt::Display for SemilocalTraceContractError {
                 write!(f, "finite semilocal place must be prime: {value}")
             }
             Self::InvalidCutoff { lambda } => {
-                write!(f, "semilocal cutoff Lambda must be finite and positive: {lambda}")
+                write!(
+                    f,
+                    "semilocal cutoff Lambda must be finite and positive: {lambda}"
+                )
             }
             Self::InvalidModulus { modulus } => {
-                write!(f, "idele-class modulus must be finite and positive: {modulus}")
+                write!(
+                    f,
+                    "idele-class modulus must be finite and positive: {modulus}"
+                )
             }
         }
     }
