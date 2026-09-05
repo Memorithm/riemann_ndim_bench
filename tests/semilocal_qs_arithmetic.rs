@@ -11,7 +11,7 @@ fn source_decomposition_lands_in_the_existing_m_s_monoid() {
         (45_i64, 8_u64, 5_u64),
         (-150, 72, 25),
         (7, 12, 7),
-        (864, 125, 125),
+        (1000, 9, 125),
     ] {
         let rational = QsRational::new(numerator, denominator, &places).unwrap();
         let decomposition = rational.unit_monoid_decomposition(&places).unwrap();
