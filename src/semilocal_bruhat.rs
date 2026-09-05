@@ -139,8 +139,17 @@ mod tests {
         let q = QsRational::new(3, 4, &places).unwrap();
         let five_q = QsRational::new(15, 4, &places).unwrap();
 
-        assert_eq!(factor.diagonal_valuation(q, 2), factor.diagonal_valuation(five_q, 2));
-        assert_eq!(factor.diagonal_valuation(q, 3), factor.diagonal_valuation(five_q, 3));
-        assert_eq!(factor.evaluate_diagonal(q), factor.evaluate_diagonal(five_q));
+        assert_eq!(
+            factor.diagonal_valuation(q, 2),
+            factor.diagonal_valuation(five_q, 2)
+        );
+        assert_eq!(
+            factor.diagonal_valuation(q, 3),
+            factor.diagonal_valuation(five_q, 3)
+        );
+        assert_eq!(
+            factor.evaluate_diagonal(q),
+            factor.evaluate_diagonal(five_q)
+        );
     }
 }
