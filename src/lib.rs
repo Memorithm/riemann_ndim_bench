@@ -1,4 +1,5 @@
 mod foundation;
+pub mod archimedean_poisson;
 pub mod prolate_qepsilon;
 pub mod quadrature;
 pub mod semilocal;
