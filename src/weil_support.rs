@@ -66,8 +66,7 @@ impl WeilSupportWindow {
     /// Test whether an actual compact convolution support is strictly inside
     /// `(q^-1, q)`.
     pub fn contains_convolution_support(self, support: MultiplicativeSupport) -> bool {
-        support.lower() > self.convolution_lower()
-            && support.upper() < self.convolution_upper()
+        support.lower() > self.convolution_lower() && support.upper() < self.convolution_upper()
     }
 
     /// Membership in the finite-place set appearing in Conjecture 4.1:
@@ -126,9 +125,7 @@ pub fn prime_is_excluded_by_support(prime: u64, support: MultiplicativeSupport) 
 ///
 /// This helper exists for deterministic finite regressions. It does not encode
 /// Conjecture 4.1's sufficiency claim.
-pub fn source_place_set_below_integer_bound(
-    q: u64,
-) -> Result<FinitePlaceSet, WeilSupportError> {
+pub fn source_place_set_below_integer_bound(q: u64) -> Result<FinitePlaceSet, WeilSupportError> {
     if q < 2 {
         return Err(WeilSupportError::InvalidIntegerPlaceBound { q });
     }
