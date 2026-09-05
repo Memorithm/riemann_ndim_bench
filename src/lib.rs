@@ -8,6 +8,7 @@ pub mod semilocal_cavity_transport;
 pub mod semilocal_fourier_multiplier;
 pub mod semilocal_frozen_cavity;
 pub mod semilocal_poisson;
+pub mod semilocal_qs;
 pub mod semilocal_resolvent;
 pub mod semilocal_trace_contract;
 pub mod semilocal_tridiagonal;
