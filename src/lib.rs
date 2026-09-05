@@ -1,3 +1,4 @@
+pub mod archimedean_poisson;
 mod foundation;
 pub mod prolate_qepsilon;
 pub mod quadrature;
