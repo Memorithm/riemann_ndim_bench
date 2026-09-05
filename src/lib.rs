@@ -3,6 +3,7 @@ mod foundation;
 pub mod prolate_qepsilon;
 pub mod quadrature;
 pub mod semilocal;
+pub mod semilocal_bruhat;
 pub mod semilocal_cavity_asymptotic;
 pub mod semilocal_cavity_drift;
 pub mod semilocal_cavity_transport;
