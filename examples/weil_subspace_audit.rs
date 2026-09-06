@@ -1,28 +1,17 @@
-use riemann_ndim_bench::semilocal_compact_archimedean::{
-    CompactArchimedeanBump, PositiveRational,
-};
+use riemann_ndim_bench::semilocal_compact_archimedean::{CompactArchimedeanBump, PositiveRational};
 use riemann_ndim_bench::weil_subspace::{
     LegendreDegreeSubspace, audit_finite_weil_legendre_subspaces,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let bump = CompactArchimedeanBump::new(
-        PositiveRational::new(1, 2)?,
-        PositiveRational::new(7, 2)?,
-    )?;
+    let bump =
+        CompactArchimedeanBump::new(PositiveRational::new(1, 2)?, PositiveRational::new(7, 2)?)?;
 
     let subspaces = [
         LegendreDegreeSubspace::new(vec![0, 1, 2, 3])?,
         LegendreDegreeSubspace::new(vec![0, 2, 4, 6])?,
     ];
-    let audit = audit_finite_weil_legendre_subspaces(
-        bump,
-        &subspaces,
-        72,
-        72,
-        96,
-        96,
-    )?;
+    let audit = audit_finite_weil_legendre_subspaces(bump, &subspaces, 72, 72, 96, 96)?;
 
     println!(
         "subspace,degrees,dimension,raw_min,generalized_min,gram_condition,boundary_residual,whitened_asymmetry"
