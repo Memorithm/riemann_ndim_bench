@@ -31,5 +31,6 @@ pub mod weil_finite_functional;
 pub mod weil_generalized_spectrum;
 pub mod weil_quadratic_matrix;
 pub mod weil_support;
+pub mod weil_support_sweep;
 
 pub use foundation::{CRITICAL_SIGMA, PiRadialGeometry, SpectralPoint};
