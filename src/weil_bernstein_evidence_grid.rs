@@ -15,8 +15,7 @@ use std::fmt;
 
 use crate::semilocal_compact_archimedean::{CompactArchimedeanBump, CompactArchimedeanError};
 use crate::weil_bernstein_subspace::{
-    BernsteinIndexSubspace, FiniteWeilBernsteinSubspaceError,
-    audit_finite_weil_bernstein_subspace,
+    BernsteinIndexSubspace, FiniteWeilBernsteinSubspaceError, audit_finite_weil_bernstein_subspace,
 };
 use crate::weil_refinement::WeilQuadratureLevel;
 use crate::weil_support_sweep::WeilSupportWindow;
@@ -299,8 +298,7 @@ pub fn audit_finite_weil_bernstein_evidence_grid(
                 level.boundary_order(),
                 level.gram_order(),
             )?;
-            let bernstein_generalized_minimum_eigenvalue =
-                audit.minimum_generalized_eigenvalue();
+            let bernstein_generalized_minimum_eigenvalue = audit.minimum_generalized_eigenvalue();
             let leading_legendre_generalized_minimum_eigenvalue =
                 audit.leading_legendre_generalized_minimum();
             let generalized_family_delta = bernstein_generalized_minimum_eigenvalue
