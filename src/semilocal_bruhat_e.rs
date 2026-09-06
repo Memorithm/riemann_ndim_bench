@@ -36,10 +36,7 @@ pub struct FiniteLocalBallProduct {
 impl FiniteLocalBallProduct {
     /// Build a complete local product, requiring exactly one ball for every
     /// finite place in `places`.
-    pub fn new(
-        places: FinitePlaceSet,
-        specs: &[LocalBallSpec],
-    ) -> Result<Self, FiniteBruhatError> {
+    pub fn new(places: FinitePlaceSet, specs: &[LocalBallSpec]) -> Result<Self, FiniteBruhatError> {
         if specs.len() != places.finite_primes().len() {
             return Err(FiniteBruhatError::IncompleteLocalProduct);
         }
@@ -55,11 +52,7 @@ impl FiniteLocalBallProduct {
                     actual_prime: spec.prime(),
                 });
             }
-            balls.push(PadicBall::new(
-                spec.prime(),
-                spec.exponent(),
-                &places,
-            )?);
+            balls.push(PadicBall::new(spec.prime(), spec.exponent(), &places)?);
         }
 
         Ok(Self {
@@ -81,9 +74,7 @@ impl FiniteLocalBallProduct {
 
     /// Exact diagonal evaluation of `prod_p 1_{p^{k_p} Z_p}`.
     pub fn evaluate_diagonal(&self, sample: QsRational) -> u8 {
-        self.balls
-            .iter()
-            .all(|ball| ball.contains_diagonal(sample)) as u8
+        self.balls.iter().all(|ball| ball.contains_diagonal(sample)) as u8
     }
 
     /// Evaluate the product on `m in M_S` without coercing `m` through a signed
@@ -372,12 +363,14 @@ pub fn compare_finite_bruhat_e_bridge(
     for &sample in samples {
         let decomposition = sample.unit_monoid_decomposition(places)?;
         let m = decomposition.monoid_element();
-        let archimedean_value = *archimedean_values
-            .get(&m)
-            .ok_or(BruhatEBridgeError::InconsistentOrbitData {
-                monoid_representative: m,
-            })?;
-        direct_raw_total += archimedean_value * f64::from(original_product.evaluate_diagonal(sample));
+        let archimedean_value =
+            *archimedean_values
+                .get(&m)
+                .ok_or(BruhatEBridgeError::InconsistentOrbitData {
+                    monoid_representative: m,
+                })?;
+        direct_raw_total +=
+            archimedean_value * f64::from(original_product.evaluate_diagonal(sample));
     }
 
     // Grouped side: evaluate the transported local coordinates on m itself.
@@ -452,19 +445,13 @@ mod tests {
             QsRational::new(5, 4, &places).unwrap(),
         ];
 
-        let audit = compare_finite_bruhat_e_bridge(
-            &samples,
-            &places,
-            &balls,
-            4.0,
-            5,
-            |m| match m {
+        let audit =
+            compare_finite_bruhat_e_bridge(&samples, &places, &balls, 4.0, 5, |m| match m {
                 3 => 2.0,
                 5 => 4.0,
                 _ => unreachable!(),
-            },
-        )
-        .unwrap();
+            })
+            .unwrap();
 
         assert_eq!(audit.groups().len(), 2);
         assert_eq!(audit.groups()[0].monoid_representative(), 3);
@@ -504,15 +491,9 @@ mod tests {
             QsRational::new(7, 3, &places).unwrap(),
         ];
 
-        let audit = compare_finite_bruhat_e_bridge(
-            &samples,
-            &places,
-            &balls,
-            9.0,
-            7,
-            |m| 1.0 / m as f64,
-        )
-        .unwrap();
+        let audit =
+            compare_finite_bruhat_e_bridge(&samples, &places, &balls, 9.0, 7, |m| 1.0 / m as f64)
+                .unwrap();
 
         assert_eq!(audit.groups().len(), 2);
         assert_eq!(audit.groups()[0].monoid_representative(), 5);
