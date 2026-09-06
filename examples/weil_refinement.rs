@@ -29,7 +29,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("dimension={dimension}");
     println!("support_lower=1/2");
     println!("support_upper=7/2");
-    println!("correlation_order,archimedean_order,boundary_order,gram_order,raw_lambda_min,generalized_lambda_min,gram_condition,max_boundary_residual,max_pairing_asymmetry,max_whitened_asymmetry");
+    println!(
+        "correlation_order,archimedean_order,boundary_order,gram_order,raw_lambda_min,generalized_lambda_min,gram_condition,max_boundary_residual,max_pairing_asymmetry,max_whitened_asymmetry"
+    );
     for sample in audit.samples() {
         let level = sample.level();
         println!(
