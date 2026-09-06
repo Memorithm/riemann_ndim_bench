@@ -108,7 +108,10 @@ impl fmt::Display for FiniteWeilGeneralizedSpectrumError {
                 write!(f, "normalized Weil eigendecomposition failed")
             }
             Self::NonFiniteEvaluation { stage, value } => {
-                write!(f, "non-finite generalized-spectrum value at {stage}: {value}")
+                write!(
+                    f,
+                    "non-finite generalized-spectrum value at {stage}: {value}"
+                )
             }
         }
     }
@@ -252,9 +255,11 @@ fn generalized_spectrum_from_dense_pair(
         .min_by(f64::total_cmp)
         .ok_or(FiniteWeilGeneralizedSpectrumError::GramDecompositionFailed)?;
     if minimum_gram <= 0.0 {
-        return Err(FiniteWeilGeneralizedSpectrumError::GramNotPositiveDefinite {
-            minimum_eigenvalue: minimum_gram,
-        });
+        return Err(
+            FiniteWeilGeneralizedSpectrumError::GramNotPositiveDefinite {
+                minimum_eigenvalue: minimum_gram,
+            },
+        );
     }
     let maximum_gram = raw_gram_eigenvalues
         .iter()
@@ -269,8 +274,7 @@ fn generalized_spectrum_from_dense_pair(
         for j in 0..dimension {
             let mut sum = 0.0_f64;
             for k in 0..dimension {
-                sum += gram_vectors[(i, k)] * gram_vectors[(j, k)]
-                    / raw_gram_eigenvalues[k].sqrt();
+                sum += gram_vectors[(i, k)] * gram_vectors[(j, k)] / raw_gram_eigenvalues[k].sqrt();
             }
             checked_finite("Gram inverse square root", sum)?;
             inverse_sqrt[i * dimension + j] = sum;
@@ -293,8 +297,7 @@ fn generalized_spectrum_from_dense_pair(
     }
     checked_finite("whitened asymmetry", max_whitened_asymmetry)?;
 
-    let whitened_matrix =
-        Mat::from_fn(dimension, dimension, |i, j| whitened[i * dimension + j]);
+    let whitened_matrix = Mat::from_fn(dimension, dimension, |i, j| whitened[i * dimension + j]);
     let decomposition = SelfAdjointEigen::new(whitened_matrix.as_ref(), Side::Lower)
         .map_err(|_| FiniteWeilGeneralizedSpectrumError::NormalizedDecompositionFailed)?;
     let diagonal = decomposition.S().column_vector();
@@ -365,16 +368,8 @@ mod tests {
     #[test]
     fn generalized_spectrum_is_invariant_under_diagonal_basis_rescaling() {
         let dimension = 3;
-        let a = vec![
-            4.0, 1.0, -0.5,
-            1.0, 3.0, 0.25,
-            -0.5, 0.25, 2.0,
-        ];
-        let g = vec![
-            2.0, 0.2, 0.1,
-            0.2, 1.5, -0.05,
-            0.1, -0.05, 1.0,
-        ];
+        let a = vec![4.0, 1.0, -0.5, 1.0, 3.0, 0.25, -0.5, 0.25, 2.0];
+        let g = vec![2.0, 0.2, 0.1, 0.2, 1.5, -0.05, 0.1, -0.05, 1.0];
         let original = generalized_spectrum_from_dense_pair(&a, &g, dimension).unwrap();
 
         let scales = [0.25_f64, 3.0, 7.0];
