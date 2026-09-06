@@ -134,10 +134,12 @@ impl FiniteWeilGeneralizedSpectrumAudit {
     ) -> Result<PrincipalWeilGeneralizedSpectrum, FiniteWeilGeneralizedSpectrumError> {
         let available = self.dimension();
         if size == 0 || size > available {
-            return Err(FiniteWeilGeneralizedSpectrumError::InvalidPrincipalDimension {
-                requested: size,
-                available,
-            });
+            return Err(
+                FiniteWeilGeneralizedSpectrumError::InvalidPrincipalDimension {
+                    requested: size,
+                    available,
+                },
+            );
         }
 
         let mut a = vec![0.0_f64; size * size];
