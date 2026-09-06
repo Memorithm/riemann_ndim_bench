@@ -5,15 +5,15 @@
 //! declared finite span, but ordinary eigenvalue magnitudes depend on basis
 //! scaling. This module adds an explicit positive Gram matrix
 //!
-//! `G_ij = integral h_i(rho) h_j(rho) d*rho`,
+//! `G_ij = integral h_i(rho) h_j(rho) d^*rho`,
 //!
-//! with `d*rho = d rho / rho`, and computes the equivalent self-adjoint
+//! with `d^*rho = d rho / rho`, and computes the equivalent self-adjoint
 //! normalized matrix
 //!
 //! `B = G^(-1/2) A G^(-1/2)`.
 //!
 //! The eigenvalues of `B` are the generalized eigenvalues of `A v = lambda G v`.
-//! The multiplicative `L^2(d*rho)` norm used here is an explicit numerical
+//! The multiplicative `L^2(d^*rho)` norm used here is an explicit numerical
 //! normalization choice. It is not identified with the source semilocal
 //! Hilbert space `L^2(X_S)` and does not upgrade finite-basis evidence to Weil
 //! positivity or RH.
