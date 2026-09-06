@@ -161,7 +161,9 @@ impl fmt::Display for FiniteWeilFunctionalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Quadrature(error) => write!(f, "Weil quadrature construction failed: {error:?}"),
-            Self::Boundary(error) => write!(f, "compact Weil test-function evaluation failed: {error}"),
+            Self::Boundary(error) => {
+                write!(f, "compact Weil test-function evaluation failed: {error}")
+            }
             Self::SupportRatioTooLarge { floor } => write!(
                 f,
                 "compact support ratio requires a prime-power bound larger than u64: floor={floor}"
@@ -308,12 +310,8 @@ pub fn audit_finite_weil_functional(
     let pole_term = 2.0 * moments.plus_half * moments.minus_half;
     checked_finite("critical pole term", pole_term)?;
 
-    let archimedean_term = archimedean_weil_term(
-        &autocorrelation,
-        theta_zero,
-        archimedean_order,
-        ratio,
-    )?;
+    let archimedean_term =
+        archimedean_weil_term(&autocorrelation, theta_zero, archimedean_order, ratio)?;
 
     let mut prime_terms = Vec::new();
     let mut prime_total = 0.0_f64;
@@ -334,8 +332,8 @@ pub fn audit_finite_weil_functional(
                 autocorrelation.value(-shift)?,
             )
         };
-        let contribution = (prime as f64).ln() / (integer as f64).sqrt()
-            * (theta_positive + theta_negative);
+        let contribution =
+            (prime as f64).ln() / (integer as f64).sqrt() * (theta_positive + theta_negative);
         checked_finite("prime-power contribution", contribution)?;
         prime_total += contribution;
         prime_terms.push(PrimePowerWeilTerm {
@@ -379,8 +377,7 @@ fn archimedean_weil_term(
     let theta_sym_zero = 2.0 * theta_zero;
 
     let ratio_f64 = ratio.numerator as f64 / ratio.denominator as f64;
-    let coefficient = EULER_MASCHERONI
-        + (4.0 * PI * (ratio_f64 - 1.0) / (ratio_f64 + 1.0)).ln();
+    let coefficient = EULER_MASCHERONI + (4.0 * PI * (ratio_f64 - 1.0) / (ratio_f64 + 1.0)).ln();
     checked_finite("archimedean compact coefficient", coefficient)?;
 
     let mut weighted_sum = 0.0_f64;
@@ -391,8 +388,8 @@ fn archimedean_weil_term(
 
         // Algebraically this is exp(t/2)*theta_sym(t)-theta_sym(0).
         // Splitting off expm1 reduces cancellation near t=0.
-        let numerator = (0.5 * t).exp_m1() * theta_sym_zero
-            + exp_half * (theta_symmetric - theta_sym_zero);
+        let numerator =
+            (0.5 * t).exp_m1() * theta_sym_zero + exp_half * (theta_symmetric - theta_sym_zero);
         let denominator = 2.0 * t.sinh();
         let integrand = numerator / denominator;
         checked_finite("archimedean compact integrand", integrand)?;
@@ -428,10 +425,7 @@ fn prime_power_decomposition(mut value: u64) -> Option<(u64, u32)> {
     Some((original, 1))
 }
 
-fn checked_finite(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilFunctionalError> {
+fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilFunctionalError> {
     if value.is_finite() {
         Ok(())
     } else {
