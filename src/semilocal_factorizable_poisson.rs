@@ -283,13 +283,11 @@ mod tests {
 
     #[test]
     fn dyadic_scales_remain_exactly_representable() {
-        let positive =
-            compare_factorizable_ball_poisson(&[LocalBallSpec::new(2, 4)], 64).unwrap();
+        let positive = compare_factorizable_ball_poisson(&[LocalBallSpec::new(2, 4)], 64).unwrap();
         assert_eq!(positive.diagonal_lattice_scale(), 16.0);
         assert_eq!(positive.fourier_local_scale(), 1.0 / 16.0);
 
-        let negative =
-            compare_factorizable_ball_poisson(&[LocalBallSpec::new(2, -4)], 64).unwrap();
+        let negative = compare_factorizable_ball_poisson(&[LocalBallSpec::new(2, -4)], 64).unwrap();
         assert_eq!(negative.diagonal_lattice_scale(), 1.0 / 16.0);
         assert_eq!(negative.fourier_local_scale(), 16.0);
     }
