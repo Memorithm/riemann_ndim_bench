@@ -4,7 +4,10 @@ use riemann_ndim_bench::weil_bernstein_subspace::BernsteinIndexSubspace;
 use riemann_ndim_bench::weil_refinement::WeilQuadratureLevel;
 use riemann_ndim_bench::weil_support_sweep::WeilSupportWindow;
 
-fn rational(numerator: u64, denominator: u64) -> Result<PositiveRational, Box<dyn std::error::Error>> {
+fn rational(
+    numerator: u64,
+    denominator: u64,
+) -> Result<PositiveRational, Box<dyn std::error::Error>> {
     Ok(PositiveRational::new(numerator, denominator)?)
 }
 
