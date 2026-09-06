@@ -18,9 +18,7 @@ use std::fmt;
 use faer::{Mat, Side, linalg::solvers::SelfAdjointEigen};
 
 use crate::semilocal_compact_archimedean::CompactArchimedeanBump;
-use crate::weil_bernstein_probe::{
-    FiniteWeilBernsteinProbeError, bernstein_legendre_coefficients,
-};
+use crate::weil_bernstein_probe::{FiniteWeilBernsteinProbeError, bernstein_legendre_coefficients};
 use crate::weil_boundary::WeilBoundaryError;
 use crate::weil_generalized_spectrum::{
     FiniteWeilGeneralizedSpectrumError, audit_finite_weil_generalized_spectrum,
@@ -35,7 +33,10 @@ pub struct BernsteinIndexSubspace {
 }
 
 impl BernsteinIndexSubspace {
-    pub fn new(degree: usize, indices: Vec<usize>) -> Result<Self, FiniteWeilBernsteinSubspaceError> {
+    pub fn new(
+        degree: usize,
+        indices: Vec<usize>,
+    ) -> Result<Self, FiniteWeilBernsteinSubspaceError> {
         if indices.is_empty() {
             return Err(FiniteWeilBernsteinSubspaceError::EmptyIndexSet);
         }
@@ -203,8 +204,12 @@ impl fmt::Display for FiniteWeilBernsteinSubspaceError {
             Self::Parent(error) => write!(f, "parent generalized-spectrum audit failed: {error}"),
             Self::Probe(error) => write!(f, "Bernstein coefficient construction failed: {error}"),
             Self::Boundary(error) => write!(f, "Bernstein subspace boundary audit failed: {error}"),
-            Self::RawDecompositionFailed => write!(f, "Bernstein subspace raw eigendecomposition failed"),
-            Self::GramDecompositionFailed => write!(f, "Bernstein subspace Gram eigendecomposition failed"),
+            Self::RawDecompositionFailed => {
+                write!(f, "Bernstein subspace raw eigendecomposition failed")
+            }
+            Self::GramDecompositionFailed => {
+                write!(f, "Bernstein subspace Gram eigendecomposition failed")
+            }
             Self::GramNotPositiveDefinite { minimum_eigenvalue } => write!(
                 f,
                 "Bernstein subspace Gram matrix is not numerically positive definite: lambda_min={minimum_eigenvalue}"
@@ -249,12 +254,11 @@ pub fn audit_finite_weil_bernstein_subspace(
     boundary_order: usize,
     gram_order: usize,
 ) -> Result<FiniteWeilBernsteinSubspaceAudit, FiniteWeilBernsteinSubspaceError> {
-    let parent_dimension = subspace
-        .degree()
-        .checked_add(1)
-        .ok_or(FiniteWeilBernsteinSubspaceError::ParentDimensionOverflow {
+    let parent_dimension = subspace.degree().checked_add(1).ok_or(
+        FiniteWeilBernsteinSubspaceError::ParentDimensionOverflow {
             degree: subspace.degree(),
-        })?;
+        },
+    )?;
     let parent = audit_finite_weil_generalized_spectrum(
         bump,
         parent_dimension,
@@ -307,9 +311,8 @@ pub fn audit_finite_weil_bernstein_subspace(
 
     let mut parent_moments = Vec::with_capacity(parent_dimension);
     for degree in 0..parent_dimension {
-        parent_moments.push(
-            CompactWeilBasisFunction::new(bump, degree).boundary_moments(boundary_order)?,
-        );
+        parent_moments
+            .push(CompactWeilBasisFunction::new(bump, degree).boundary_moments(boundary_order)?);
     }
     let mut max_boundary_residual = 0.0_f64;
     for coefficient_vector in &coefficients {
@@ -424,8 +427,7 @@ fn solve_transformed_pair(
         for j in 0..dimension {
             let mut sum = 0.0_f64;
             for k in 0..dimension {
-                sum += gram_vectors[(i, k)] * gram_vectors[(j, k)]
-                    / raw_gram_eigenvalues[k].sqrt();
+                sum += gram_vectors[(i, k)] * gram_vectors[(j, k)] / raw_gram_eigenvalues[k].sqrt();
             }
             checked_finite("Bernstein subspace Gram inverse square root", sum)?;
             inverse_sqrt[i * dimension + j] = sum;
@@ -488,10 +490,7 @@ fn multiply_dense(left: &[f64], right: &[f64], dimension: usize) -> Vec<f64> {
     output
 }
 
-fn checked_finite(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilBernsteinSubspaceError> {
+fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilBernsteinSubspaceError> {
     if value.is_finite() {
         Ok(())
     } else {
