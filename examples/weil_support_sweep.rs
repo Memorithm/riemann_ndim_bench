@@ -2,9 +2,7 @@ use std::env;
 use std::error::Error;
 
 use riemann_ndim_bench::semilocal_compact_archimedean::PositiveRational;
-use riemann_ndim_bench::weil_support_sweep::{
-    WeilSupportWindow, audit_finite_weil_support_sweep,
-};
+use riemann_ndim_bench::weil_support_sweep::{WeilSupportWindow, audit_finite_weil_support_sweep};
 
 fn parse_usize(index: usize, default: usize) -> Result<usize, Box<dyn Error>> {
     match env::args().nth(index) {
