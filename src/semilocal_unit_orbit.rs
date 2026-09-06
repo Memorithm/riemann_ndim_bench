@@ -85,19 +85,19 @@ impl SemilocalUnitOrbitTransport {
 
     /// Transport one local ball under `x -> u x`: `k_p -> k_p - n_p`.
     pub fn transport_ball(&self, ball: LocalBallSpec) -> Result<LocalBallSpec, UnitOrbitError> {
-        let unit_exponent = self
-            .exponent_for(ball.prime())
-            .ok_or(UnitOrbitError::PrimeOutsideUnitPlaces {
-                prime: ball.prime(),
-            })?;
-        let exponent = ball
-            .exponent()
-            .checked_sub(unit_exponent)
-            .ok_or(UnitOrbitError::ExponentOverflow {
-                prime: ball.prime(),
-                ball_exponent: ball.exponent(),
-                unit_exponent,
-            })?;
+        let unit_exponent =
+            self.exponent_for(ball.prime())
+                .ok_or(UnitOrbitError::PrimeOutsideUnitPlaces {
+                    prime: ball.prime(),
+                })?;
+        let exponent =
+            ball.exponent()
+                .checked_sub(unit_exponent)
+                .ok_or(UnitOrbitError::ExponentOverflow {
+                    prime: ball.prime(),
+                    ball_exponent: ball.exponent(),
+                    unit_exponent,
+                })?;
         Ok(LocalBallSpec::new(ball.prime(), exponent))
     }
 
@@ -131,19 +131,19 @@ impl SemilocalUnitOrbitTransport {
         &self,
         original_ball: LocalBallSpec,
     ) -> Result<i32, UnitOrbitError> {
-        let unit_exponent = self
-            .exponent_for(original_ball.prime())
-            .ok_or(UnitOrbitError::PrimeOutsideUnitPlaces {
+        let unit_exponent = self.exponent_for(original_ball.prime()).ok_or(
+            UnitOrbitError::PrimeOutsideUnitPlaces {
                 prime: original_ball.prime(),
-            })?;
+            },
+        )?;
         let transported = self.transport_ball(original_ball)?;
-        unit_exponent
-            .checked_add(transported.exponent())
-            .ok_or(UnitOrbitError::CompensationOverflow {
+        unit_exponent.checked_add(transported.exponent()).ok_or(
+            UnitOrbitError::CompensationOverflow {
                 prime: original_ball.prime(),
                 unit_exponent,
                 transported_exponent: transported.exponent(),
-            })
+            },
+        )
     }
 
     /// Absolute archimedean scale `|u_infinity| = prod_p p^{n_p}` evaluated in
