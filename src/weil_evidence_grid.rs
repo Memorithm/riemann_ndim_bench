@@ -187,8 +187,14 @@ pub enum FiniteWeilEvidenceGridError {
 impl fmt::Display for FiniteWeilEvidenceGridError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::EmptyWindowSet => write!(f, "finite Weil evidence grid requires at least one support window"),
-            Self::EmptyLevelSet => write!(f, "finite Weil evidence grid requires at least one quadrature level"),
+            Self::EmptyWindowSet => write!(
+                f,
+                "finite Weil evidence grid requires at least one support window"
+            ),
+            Self::EmptyLevelSet => write!(
+                f,
+                "finite Weil evidence grid requires at least one quadrature level"
+            ),
             Self::CompactSupport(error) => write!(f, "invalid compact support window: {error}"),
             Self::Generalized(error) => write!(f, "generalized finite Weil audit failed: {error}"),
         }
