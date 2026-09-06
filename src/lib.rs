@@ -27,6 +27,7 @@ pub mod semilocal_zero_shift_cavity;
 pub mod semilocal_zero_shift_response;
 pub mod toeplitz;
 pub mod weil_bernstein_probe;
+pub mod weil_bernstein_subspace;
 pub mod weil_boundary;
 pub mod weil_evidence_grid;
 pub mod weil_finite_functional;
