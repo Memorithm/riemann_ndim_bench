@@ -30,6 +30,50 @@ use crate::weil_quadratic_matrix::{
     audit_finite_weil_quadratic_matrix,
 };
 
+/// One leading-principal normalized spectral datum extracted from a single
+/// already-computed finite Weil matrix and Gram matrix.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PrincipalWeilGeneralizedSpectrum {
+    dimension: usize,
+    raw_minimum_eigenvalue: f64,
+    generalized_minimum_eigenvalue: f64,
+    gram_minimum_eigenvalue: f64,
+    gram_maximum_eigenvalue: f64,
+    gram_condition_number: f64,
+}
+
+impl PrincipalWeilGeneralizedSpectrum {
+    #[inline]
+    pub const fn dimension(self) -> usize {
+        self.dimension
+    }
+
+    #[inline]
+    pub const fn raw_minimum_eigenvalue(self) -> f64 {
+        self.raw_minimum_eigenvalue
+    }
+
+    #[inline]
+    pub const fn generalized_minimum_eigenvalue(self) -> f64 {
+        self.generalized_minimum_eigenvalue
+    }
+
+    #[inline]
+    pub const fn gram_minimum_eigenvalue(self) -> f64 {
+        self.gram_minimum_eigenvalue
+    }
+
+    #[inline]
+    pub const fn gram_maximum_eigenvalue(self) -> f64 {
+        self.gram_maximum_eigenvalue
+    }
+
+    #[inline]
+    pub const fn gram_condition_number(self) -> f64 {
+        self.gram_condition_number
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct FiniteWeilGeneralizedSpectrumAudit {
     pairing: FiniteWeilQuadraticMatrixAudit,
@@ -80,6 +124,63 @@ impl FiniteWeilGeneralizedSpectrumAudit {
     pub fn max_whitened_asymmetry(&self) -> f64 {
         self.max_whitened_asymmetry
     }
+
+    /// Re-solve the generalized problem on the leading `size x size` principal
+    /// subspace without recomputing any Riemann--Weil pairings or Gram
+    /// quadrature samples.
+    pub fn principal_spectrum(
+        &self,
+        size: usize,
+    ) -> Result<PrincipalWeilGeneralizedSpectrum, FiniteWeilGeneralizedSpectrumError> {
+        let available = self.dimension();
+        if size == 0 || size > available {
+            return Err(
+                FiniteWeilGeneralizedSpectrumError::InvalidPrincipalDimension {
+                    requested: size,
+                    available,
+                },
+            );
+        }
+
+        let mut a = vec![0.0_f64; size * size];
+        let mut g = vec![0.0_f64; size * size];
+        for i in 0..size {
+            for j in 0..size {
+                a[i * size + j] = self
+                    .pairing
+                    .entry(i, j)
+                    .expect("principal indices are inside the finite pairing matrix");
+                g[i * size + j] = self.gram_entries[i * available + j];
+            }
+        }
+
+        let normalized = generalized_spectrum_from_dense_pair(&a, &g, size)?;
+        let raw_minimum_eigenvalue = self.pairing.principal_minimum_eigenvalue(size)?;
+        let gram_minimum_eigenvalue = normalized.gram_eigenvalues[0];
+        let gram_maximum_eigenvalue = *normalized
+            .gram_eigenvalues
+            .last()
+            .expect("positive principal Gram matrix has an eigenvalue");
+
+        Ok(PrincipalWeilGeneralizedSpectrum {
+            dimension: size,
+            raw_minimum_eigenvalue,
+            generalized_minimum_eigenvalue: normalized.generalized_eigenvalues[0],
+            gram_minimum_eigenvalue,
+            gram_maximum_eigenvalue,
+            gram_condition_number: normalized.gram_condition_number,
+        })
+    }
+
+    /// Return all leading-principal spectral rows `N=1..dimension` while
+    /// reusing the single full pairing/Gram computation.
+    pub fn principal_sweep(
+        &self,
+    ) -> Result<Vec<PrincipalWeilGeneralizedSpectrum>, FiniteWeilGeneralizedSpectrumError> {
+        (1..=self.dimension())
+            .map(|size| self.principal_spectrum(size))
+            .collect()
+    }
 }
 
 #[derive(Debug)]
@@ -90,6 +191,7 @@ pub enum FiniteWeilGeneralizedSpectrumError {
     GramDecompositionFailed,
     GramNotPositiveDefinite { minimum_eigenvalue: f64 },
     NormalizedDecompositionFailed,
+    InvalidPrincipalDimension { requested: usize, available: usize },
     NonFiniteEvaluation { stage: &'static str, value: f64 },
 }
 
@@ -107,12 +209,17 @@ impl fmt::Display for FiniteWeilGeneralizedSpectrumError {
             Self::NormalizedDecompositionFailed => {
                 write!(f, "normalized Weil eigendecomposition failed")
             }
-            Self::NonFiniteEvaluation { stage, value } => {
-                write!(
-                    f,
-                    "non-finite generalized-spectrum value at {stage}: {value}"
-                )
-            }
+            Self::InvalidPrincipalDimension {
+                requested,
+                available,
+            } => write!(
+                f,
+                "invalid principal generalized dimension {requested}; available dimension is {available}"
+            ),
+            Self::NonFiniteEvaluation { stage, value } => write!(
+                f,
+                "non-finite generalized-spectrum value at {stage}: {value}"
+            ),
         }
     }
 }
@@ -408,6 +515,35 @@ mod tests {
             (audit.minimum_generalized_eigenvalue() - expected_minimum).abs() <= 5.0e-7,
             "generalized lambda_min={:.15e}",
             audit.minimum_generalized_eigenvalue()
+        );
+    }
+
+    #[test]
+    fn principal_sweep_reuses_full_matrix_consistently() {
+        let audit = audit_finite_weil_generalized_spectrum(bump(), 3, 64, 64, 96, 96).unwrap();
+        let rows = audit.principal_sweep().unwrap();
+        assert_eq!(rows.len(), 3);
+
+        for (index, row) in rows.iter().copied().enumerate() {
+            let size = index + 1;
+            assert_eq!(row.dimension(), size);
+            assert!(row.raw_minimum_eigenvalue().is_finite());
+            assert!(row.generalized_minimum_eigenvalue().is_finite());
+            assert!(row.gram_minimum_eigenvalue() > 0.0);
+            assert!(row.gram_maximum_eigenvalue().is_finite());
+            assert!(row.gram_condition_number().is_finite());
+            assert!(
+                (row.raw_minimum_eigenvalue()
+                    - audit.pairing().principal_minimum_eigenvalue(size).unwrap())
+                .abs()
+                    <= 1.0e-14
+            );
+        }
+
+        let full = rows.last().copied().unwrap();
+        assert!(
+            (full.generalized_minimum_eigenvalue() - audit.minimum_generalized_eigenvalue()).abs()
+                <= 2.0e-12
         );
     }
 }
