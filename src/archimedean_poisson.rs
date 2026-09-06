@@ -135,6 +135,59 @@ impl CertifiedESum {
     }
 }
 
+/// Certified bilateral lattice sum of the manufactured archimedean fixture.
+///
+/// The represented quantity is `sum_{n in Z} g(n * step)`, where `g` is either
+/// the source fixture or its exact Fourier transform.  The finite prefix uses
+/// `|n| <= max_abs_n`; the omitted Gaussian tails are bounded explicitly.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CertifiedLatticeSum {
+    value: f64,
+    step: f64,
+    max_abs_n: u64,
+    absolute_tail_bound: f64,
+}
+
+impl CertifiedLatticeSum {
+    #[inline]
+    pub fn value(self) -> f64 {
+        self.value
+    }
+
+    #[inline]
+    pub fn step(self) -> f64 {
+        self.step
+    }
+
+    #[inline]
+    pub fn max_abs_n(self) -> u64 {
+        self.max_abs_n
+    }
+
+    #[inline]
+    pub fn absolute_tail_bound(self) -> f64 {
+        self.absolute_tail_bound
+    }
+}
+
+/// Certified bilateral lattice sum of the source fixture on `step * Z`.
+pub fn certified_source_fixture_lattice_sum(
+    step: f64,
+    max_abs_n: u64,
+) -> Result<CertifiedLatticeSum, ArchimedeanPoissonError> {
+    certified_lattice_sum(&SOURCE_FIXTURE, step, max_abs_n)
+}
+
+/// Certified bilateral lattice sum of the exact Fourier-transformed source
+/// fixture on `step * Z`.
+pub fn certified_source_fixture_fourier_lattice_sum(
+    step: f64,
+    max_abs_n: u64,
+) -> Result<CertifiedLatticeSum, ArchimedeanPoissonError> {
+    let transformed = transformed_components();
+    certified_lattice_sum(&transformed, step, max_abs_n)
+}
+
 /// Certified comparison of the two sides of equation (4.3).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PoissonIdentityComparison {
@@ -229,6 +282,35 @@ fn certified_e_sum(
     })
 }
 
+fn certified_lattice_sum(
+    components: &[GaussianComponent],
+    step: f64,
+    max_abs_n: u64,
+) -> Result<CertifiedLatticeSum, ArchimedeanPoissonError> {
+    checked_x(step)?;
+    if max_abs_n == 0 {
+        return Err(ArchimedeanPoissonError::EmptyPrefix);
+    }
+
+    let mut value = mixture_value(components, 0.0);
+    for n in 1..=max_abs_n {
+        value += 2.0 * mixture_value(components, n as f64 * step);
+    }
+
+    let absolute_tail_bound = 2.0
+        * components
+            .iter()
+            .map(|&component| gaussian_series_tail_bound(component, step, max_abs_n))
+            .sum::<f64>();
+
+    Ok(CertifiedLatticeSum {
+        value,
+        step,
+        max_abs_n,
+        absolute_tail_bound,
+    })
+}
+
 fn gaussian_series_tail_bound(component: GaussianComponent, x: f64, max_n: u64) -> f64 {
     let c = PI * component.scale * x * x;
     let n = max_n as f64;
@@ -272,6 +354,10 @@ mod tests {
         ));
         assert_eq!(
             compare_source_poisson_identity(1.0, 0).unwrap_err(),
+            ArchimedeanPoissonError::EmptyPrefix
+        );
+        assert_eq!(
+            certified_source_fixture_lattice_sum(1.0, 0).unwrap_err(),
             ArchimedeanPoissonError::EmptyPrefix
         );
     }

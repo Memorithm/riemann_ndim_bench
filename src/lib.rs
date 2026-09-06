@@ -7,6 +7,7 @@ pub mod semilocal_bruhat;
 pub mod semilocal_cavity_asymptotic;
 pub mod semilocal_cavity_drift;
 pub mod semilocal_cavity_transport;
+pub mod semilocal_factorizable_poisson;
 pub mod semilocal_fourier_multiplier;
 pub mod semilocal_frozen_cavity;
 pub mod semilocal_padic_fourier;
