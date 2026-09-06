@@ -191,7 +191,8 @@ pub fn compare_factorizable_ball_poisson(
 
     let places = FinitePlaceSet::new(sorted.iter().map(|spec| spec.prime).collect())?;
 
-    let mut log_scale = 0.0_f64;
+    let mut diagonal_lattice_scale = 1.0_f64;
+    let mut fourier_local_scale = 1.0_f64;
     for spec in &sorted {
         let ball = PadicBall::new(spec.prime, spec.exponent, &places)?;
         let transformed = ball.fourier_transform();
@@ -201,17 +202,26 @@ pub fn compare_factorizable_ball_poisson(
         debug_assert_eq!(transformed.scale().prime(), spec.prime);
         debug_assert_eq!(transformed.scale().exponent(), -i64::from(spec.exponent));
 
-        log_scale += f64::from(spec.exponent) * (spec.prime as f64).ln();
-    }
+        let prime = spec.prime as f64;
+        if spec.exponent >= 0 {
+            for _ in 0..spec.exponent as u32 {
+                diagonal_lattice_scale *= prime;
+                fourier_local_scale /= prime;
+            }
+        } else {
+            for _ in 0..spec.exponent.unsigned_abs() {
+                diagonal_lattice_scale /= prime;
+                fourier_local_scale *= prime;
+            }
+        }
 
-    let diagonal_lattice_scale = log_scale.exp();
-    let fourier_local_scale = (-log_scale).exp();
-    if !diagonal_lattice_scale.is_finite()
-        || diagonal_lattice_scale <= 0.0
-        || !fourier_local_scale.is_finite()
-        || fourier_local_scale <= 0.0
-    {
-        return Err(FactorizablePoissonError::ScaleOutOfRange);
+        if !diagonal_lattice_scale.is_finite()
+            || diagonal_lattice_scale <= 0.0
+            || !fourier_local_scale.is_finite()
+            || fourier_local_scale <= 0.0
+        {
+            return Err(FactorizablePoissonError::ScaleOutOfRange);
+        }
     }
 
     let original_sum = certified_source_fixture_lattice_sum(diagonal_lattice_scale, max_abs_n)?;
@@ -269,6 +279,17 @@ mod tests {
             );
             assert_certified(&comparison);
         }
+    }
+
+    #[test]
+    fn dyadic_scales_remain_exactly_representable() {
+        let positive = compare_factorizable_ball_poisson(&[LocalBallSpec::new(2, 4)], 64).unwrap();
+        assert_eq!(positive.diagonal_lattice_scale(), 16.0);
+        assert_eq!(positive.fourier_local_scale(), 1.0 / 16.0);
+
+        let negative = compare_factorizable_ball_poisson(&[LocalBallSpec::new(2, -4)], 64).unwrap();
+        assert_eq!(negative.diagonal_lattice_scale(), 1.0 / 16.0);
+        assert_eq!(negative.fourier_local_scale(), 16.0);
     }
 
     #[test]
