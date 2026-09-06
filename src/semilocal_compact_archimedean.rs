@@ -245,12 +245,12 @@ impl fmt::Display for CompactArchimedeanError {
             Self::InvalidSupportOrder { lower, upper } => write!(
                 f,
                 "compact support must satisfy lower < upper: {}/{} !< {}/{}",
-                lower.numerator,
-                lower.denominator,
-                upper.numerator,
-                upper.denominator
+                lower.numerator, lower.denominator, upper.numerator, upper.denominator
             ),
-            Self::Support(error) => write!(f, "compact support is not numerically representable: {error}"),
+            Self::Support(error) => write!(
+                f,
+                "compact support is not numerically representable: {error}"
+            ),
             Self::Qs(error) => write!(f, "Q_S arithmetic failed while applying support: {error}"),
             Self::Bridge(error) => write!(f, "finite Bruhat E bridge failed: {error}"),
         }
@@ -380,15 +380,8 @@ mod tests {
         )
         .unwrap();
 
-        let audit = compare_compact_bruhat_e_bridge(
-            &samples,
-            &places,
-            &balls,
-            4.0,
-            x,
-            bump,
-        )
-        .unwrap();
+        let audit =
+            compare_compact_bruhat_e_bridge(&samples, &places, &balls, 4.0, x, bump).unwrap();
 
         // m=1 and m=7 lie exactly on the open support boundary and are removed.
         assert_eq!(audit.input_sample_count(), 7);
