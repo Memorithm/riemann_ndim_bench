@@ -149,13 +149,30 @@ impl SemilocalUnitOrbitTransport {
     /// Absolute archimedean scale `|u_infinity| = prod_p p^{n_p}` evaluated in
     /// `f64`. Exact reasoning should use [`Self::unit_exponents`]; this value is
     /// only a numerical audit hook for manufactured fixtures.
+    ///
+    /// The implementation multiplies/divides the exact integer prime factors
+    /// directly instead of taking `exp(sum n_p log p)`, avoiding unnecessary
+    /// transcendental roundoff in exactly representable cases such as `9/8`.
     pub fn archimedean_absolute_scale(&self) -> Result<f64, UnitOrbitError> {
-        let log_scale = self
-            .unit_exponents
-            .iter()
-            .map(|&(prime, exponent)| f64::from(exponent) * (prime as f64).ln())
-            .sum::<f64>();
-        let scale = log_scale.exp();
+        let mut scale = 1.0_f64;
+        for &(prime, exponent) in &self.unit_exponents {
+            let factor = prime as f64;
+            if exponent >= 0 {
+                for _ in 0..exponent as u32 {
+                    scale *= factor;
+                    if !scale.is_finite() {
+                        return Err(UnitOrbitError::ArchimedeanScaleOutOfRange);
+                    }
+                }
+            } else {
+                for _ in 0..exponent.unsigned_abs() {
+                    scale /= factor;
+                    if scale == 0.0 {
+                        return Err(UnitOrbitError::ArchimedeanScaleOutOfRange);
+                    }
+                }
+            }
+        }
         if scale.is_finite() && scale > 0.0 {
             Ok(scale)
         } else {
@@ -263,6 +280,6 @@ mod tests {
             SemilocalUnitOrbitTransport::from_decomposition(&decomposition, &places).unwrap();
 
         // u = 2^-3 * 3^2 = 9/8 and m = 5.
-        assert!((action.archimedean_absolute_scale().unwrap() - 9.0 / 8.0).abs() < 3.0e-16);
+        assert_eq!(action.archimedean_absolute_scale().unwrap(), 9.0 / 8.0);
     }
 }
