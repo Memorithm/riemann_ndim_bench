@@ -68,6 +68,37 @@ For the existing compact support `(1/2, 7/2)` and the first four Legendre-weight
 
 The Rust test uses this only as a cross-implementation regression target. Passing the regression confirms agreement of two finite numerical implementations; it is not a theorem and does not establish positivity beyond the tested span.
 
+## Dimension sweep
+
+The audit can re-solve every leading-principal pair `(A_N,G_N)` from one already-computed maximum-dimensional matrix. This avoids repeating the expensive Riemann--Weil pairings for every `N`.
+
+A reproducible release-mode probe is provided as an example:
+
+```text
+cargo run --release --example weil_generalized_sweep -- 6 96 96 128 128
+```
+
+The five arguments are, in order:
+
+```text
+max_dimension correlation_order archimedean_order boundary_order gram_order
+```
+
+With no arguments the example uses the values shown above. Its CSV rows report
+
+```text
+dimension,
+raw_lambda_min,
+generalized_lambda_min,
+gram_lambda_min,
+gram_lambda_max,
+gram_condition
+```
+
+and the header also records the global maximum critical-boundary residual, raw pairing asymmetry and whitening asymmetry.
+
+The sweep prints measured values; it does not assert that either minimum eigenvalue must be positive. Higher dimensions are intentionally kept out of the default CI path because the mixed-pairing quadratures are substantially more expensive than the small regression cases.
+
 ## Scientific boundary
 
 A positive generalized spectrum on a finite basis means only that the implemented Weil form is numerically positive on that finite span relative to the declared positive norm.
@@ -83,4 +114,4 @@ It does not establish:
 
 A stable negative generalized eigenvalue would be a candidate finite negative direction and would require independent verification before interpretation.
 
-The next useful numerical layer is a reproducible dimension sweep reporting both raw and generalized minimum eigenvalues, Gram conditioning, boundary residuals, pairing asymmetry and quadrature dependence without assuming their sign.
+The next mathematical step after collecting stable sweeps is to study basis conditioning, support-window variation and error control rather than extrapolating finite positivity to the full Weil criterion.
