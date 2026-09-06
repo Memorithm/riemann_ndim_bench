@@ -51,8 +51,18 @@ Tests do **not** assume that this eigenvalue is positive. Instead they check:
 2. one-dimensional agreement with the scalar Weil functional audit;
 3. independently evaluated off-diagonal symmetry;
 4. critical-boundary residuals for every basis vector;
-5. Rayleigh--Ritz monotonicity of the minimum eigenvalue for leading principal basis expansions;
+5. Cauchy interlacing consistency of the minimum eigenvalue for leading principal basis expansions;
 6. convergence of the minimum eigenvalue under quadrature refinement.
+
+The ordinary eigenvalues of `A` use the Euclidean norm of the coefficient vector and therefore depend on the normalization of the chosen basis. Their magnitude is not an intrinsic spectrum of the admissible function space. The sign/inertia of the quadratic form on the declared finite span is the basis-invariant information relevant at this stage.
+
+A subsequent normalization layer should build an independent positive Gram matrix, for example in the declared multiplicative `L^2(d*rho)` norm, and solve the generalized problem
+
+```text
+A v = lambda G v.
+```
+
+Only that normalized generalized spectrum should be used to compare eigenvalue magnitudes across differently scaled bases or growing dimensions.
 
 ## Scientific boundary
 
