@@ -26,7 +26,6 @@ use faer::{Mat, Side, linalg::solvers::SelfAdjointEigen};
 
 use crate::quadrature::{GaussLegendreUnit, QuadratureError};
 use crate::semilocal_compact_archimedean::CompactArchimedeanBump;
-use crate::semilocal_compact_weil::CompactWeilTestFunction;
 use crate::weil_boundary::{WeilBoundaryError, WeilBoundaryMoments, critical_boundary_moments};
 
 const EULER_MASCHERONI: f64 = 0.577_215_664_901_532_9;
@@ -100,15 +99,15 @@ impl CompactWeilBasisFunction {
         let bump_tt = bump * (second_h + first_h * first_h);
 
         let y = 2.0 * t - 1.0;
-        let (polynomial, derivative_y, second_derivative_y) = legendre_with_derivatives(self.degree, y);
+        let (polynomial, derivative_y, second_derivative_y) =
+            legendre_with_derivatives(self.degree, y);
         let polynomial_t = 2.0 * derivative_y;
         let polynomial_tt = 4.0 * second_derivative_y;
 
         let generator = bump * polynomial;
         let generator_t = bump_t * polynomial + bump * polynomial_t;
-        let generator_tt = bump_tt * polynomial
-            + 2.0 * bump_t * polynomial_t
-            + bump * polynomial_tt;
+        let generator_tt =
+            bump_tt * polynomial + 2.0 * bump_t * polynomial_t + bump * polynomial_tt;
 
         // In the affine coordinate t, rho d/drho = A d/dt with A=rho/width,
         // hence (rho d/drho)^2 g = A g_t + A^2 g_tt.
@@ -214,10 +213,7 @@ impl FiniteWeilQuadraticMatrixAudit {
     }
 
     /// Smallest eigenvalue of the leading `size x size` principal submatrix.
-    pub fn principal_minimum_eigenvalue(
-        &self,
-        size: usize,
-    ) -> Result<f64, FiniteWeilMatrixError> {
+    pub fn principal_minimum_eigenvalue(&self, size: usize) -> Result<f64, FiniteWeilMatrixError> {
         if size == 0 || size > self.dimension {
             return Err(FiniteWeilMatrixError::InvalidPrincipalDimension {
                 requested: size,
@@ -245,13 +241,18 @@ impl fmt::Display for FiniteWeilMatrixError {
         match self {
             Self::EmptyBasis => write!(f, "finite Weil quadratic-form basis must be non-empty"),
             Self::Quadrature(error) => write!(f, "quadrature construction failed: {error:?}"),
-            Self::Boundary(error) => write!(f, "boundary-admissible basis evaluation failed: {error}"),
+            Self::Boundary(error) => {
+                write!(f, "boundary-admissible basis evaluation failed: {error}")
+            }
             Self::SupportRatioTooLarge { floor } => write!(
                 f,
                 "compact support ratio requires a prime-power bound larger than u64: floor={floor}"
             ),
             Self::DecompositionFailed => write!(f, "self-adjoint eigendecomposition failed"),
-            Self::InvalidPrincipalDimension { requested, available } => write!(
+            Self::InvalidPrincipalDimension {
+                requested,
+                available,
+            } => write!(
                 f,
                 "invalid principal matrix dimension {requested}; available dimension is {available}"
             ),
@@ -422,8 +423,8 @@ pub fn audit_finite_weil_quadratic_matrix(
                     archimedean_order,
                     boundary_order,
                 )?;
-                max_raw_pairing_asymmetry = max_raw_pairing_asymmetry
-                    .max((forward.value() - reverse.value()).abs());
+                max_raw_pairing_asymmetry =
+                    max_raw_pairing_asymmetry.max((forward.value() - reverse.value()).abs());
                 0.5 * (forward.value() + reverse.value())
             };
             entries[i * dimension + j] = value;
@@ -465,12 +466,8 @@ fn audit_pairing(
     checked_finite("mixed critical pole term", pole_term)?;
 
     let theta_zero = correlation.value(0.0)?;
-    let archimedean_term = mixed_archimedean_term(
-        &correlation,
-        theta_zero,
-        ratio,
-        archimedean_order,
-    )?;
+    let archimedean_term =
+        mixed_archimedean_term(&correlation, theta_zero, ratio, archimedean_order)?;
 
     let mut prime_total = 0.0_f64;
     for integer in 2..=ratio.floor {
@@ -483,8 +480,7 @@ fn audit_pairing(
             let shift = (integer as f64).ln();
             let theta_positive = correlation.value(shift)?;
             let theta_negative = correlation.value(-shift)?;
-            (prime as f64).ln() / (integer as f64).sqrt()
-                * (theta_positive + theta_negative)
+            (prime as f64).ln() / (integer as f64).sqrt() * (theta_positive + theta_negative)
         };
         checked_finite("mixed prime-power contribution", contribution)?;
         prime_total += contribution;
@@ -512,8 +508,7 @@ fn mixed_archimedean_term(
     let quadrature = GaussLegendreUnit::new(quadrature_order)?;
     let theta_sym_zero = 2.0 * theta_zero;
     let ratio_f64 = ratio.as_f64();
-    let coefficient = EULER_MASCHERONI
-        + (4.0 * PI * (ratio_f64 - 1.0) / (ratio_f64 + 1.0)).ln();
+    let coefficient = EULER_MASCHERONI + (4.0 * PI * (ratio_f64 - 1.0) / (ratio_f64 + 1.0)).ln();
     checked_finite("mixed archimedean coefficient", coefficient)?;
 
     let mut weighted_sum = 0.0_f64;
@@ -521,8 +516,8 @@ fn mixed_archimedean_term(
         let t = correlation.log_span * node;
         let theta_symmetric = correlation.value(t)? + correlation.value(-t)?;
         let exp_half = (0.5 * t).exp();
-        let numerator = (0.5 * t).exp_m1() * theta_sym_zero
-            + exp_half * (theta_symmetric - theta_sym_zero);
+        let numerator =
+            (0.5 * t).exp_m1() * theta_sym_zero + exp_half * (theta_symmetric - theta_sym_zero);
         let denominator = 2.0 * t.sinh();
         let integrand = numerator / denominator;
         checked_finite("mixed archimedean integrand", integrand)?;
@@ -611,6 +606,7 @@ fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilMatri
 mod tests {
     use super::*;
     use crate::semilocal_compact_archimedean::PositiveRational;
+    use crate::semilocal_compact_weil::CompactWeilTestFunction;
     use crate::weil_finite_functional::audit_finite_weil_functional;
 
     fn bump() -> CompactArchimedeanBump {
@@ -637,13 +633,8 @@ mod tests {
     fn one_dimensional_matrix_reproduces_scalar_weil_audit() {
         let bump = bump();
         let matrix = audit_finite_weil_quadratic_matrix(bump, 1, 96, 96, 128).unwrap();
-        let scalar = audit_finite_weil_functional(
-            CompactWeilTestFunction::new(bump),
-            96,
-            96,
-            128,
-        )
-        .unwrap();
+        let scalar =
+            audit_finite_weil_functional(CompactWeilTestFunction::new(bump), 96, 96, 128).unwrap();
 
         assert_eq!(matrix.dimension(), 1);
         assert!((matrix.entry(0, 0).unwrap() - scalar.functional_value()).abs() <= 2.0e-10);
