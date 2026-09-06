@@ -1,27 +1,13 @@
-use riemann_ndim_bench::semilocal_compact_archimedean::{
-    CompactArchimedeanBump, PositiveRational,
-};
-use riemann_ndim_bench::weil_sine_truncation::{
-    SineModeSet, audit_finite_weil_sine_truncation,
-};
+use riemann_ndim_bench::semilocal_compact_archimedean::{CompactArchimedeanBump, PositiveRational};
+use riemann_ndim_bench::weil_sine_truncation::{SineModeSet, audit_finite_weil_sine_truncation};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let bump = CompactArchimedeanBump::new(
-        PositiveRational::new(1, 2)?,
-        PositiveRational::new(7, 2)?,
-    )?;
+    let bump =
+        CompactArchimedeanBump::new(PositiveRational::new(1, 2)?, PositiveRational::new(7, 2)?)?;
     let modes = SineModeSet::new(vec![1, 2, 3])?;
     let parent_dimensions = [4_usize, 6, 8, 10];
-    let audit = audit_finite_weil_sine_truncation(
-        bump,
-        &modes,
-        &parent_dimensions,
-        96,
-        64,
-        64,
-        96,
-        96,
-    )?;
+    let audit =
+        audit_finite_weil_sine_truncation(bump, &modes, &parent_dimensions, 96, 64, 64, 96, 96)?;
 
     println!(
         "parent_dimension,reconstruction_residual,coefficient_l1,raw_min,generalized_min,leading_generalized_min,family_delta,gram_condition,leading_gram_condition,boundary_residual,pairing_asymmetry,whitened_asymmetry"
