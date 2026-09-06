@@ -170,9 +170,7 @@ impl FiniteWeilQuadratureRefinementAudit {
         let [.., previous, last] = self.samples.as_slice() else {
             return None;
         };
-        Some(
-            (last.generalized_minimum_eigenvalue - previous.generalized_minimum_eigenvalue).abs(),
-        )
+        Some((last.generalized_minimum_eigenvalue - previous.generalized_minimum_eigenvalue).abs())
     }
 }
 
@@ -186,7 +184,10 @@ pub enum FiniteWeilRefinementError {
 impl fmt::Display for FiniteWeilRefinementError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::EmptyLevelSet => write!(f, "finite Weil refinement audit requires at least one level"),
+            Self::EmptyLevelSet => write!(
+                f,
+                "finite Weil refinement audit requires at least one level"
+            ),
             Self::CompactSupport(error) => write!(f, "invalid compact support window: {error}"),
             Self::Generalized(error) => write!(f, "generalized finite Weil audit failed: {error}"),
         }
