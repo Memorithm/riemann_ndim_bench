@@ -17,8 +17,8 @@
 
 use crate::semilocal_compact_archimedean::CompactArchimedeanBump;
 use crate::weil_boundary::{
-    WeilBoundaryError, WeilBoundaryMoments, critical_boundary_moments, q_from_log_second_derivative,
-    q_on_support,
+    WeilBoundaryError, WeilBoundaryMoments, critical_boundary_moments,
+    q_from_log_second_derivative, q_on_support,
 };
 
 const LOG_UNDERFLOW_GUARD: f64 = -700.0;
@@ -43,9 +43,13 @@ impl CompactWeilTestFunction {
     /// Numerically evaluate the compact generator `g(rho)` using the same
     /// profile as `CompactArchimedeanBump` but for an arbitrary positive `rho`.
     pub fn generator_value(self, rho: f64) -> Result<f64, WeilBoundaryError> {
-        q_on_support(self.generator.support(), rho, |rho| {
-            self.generator_value_and_second_log_derivative_inside(rho).0
-        })
+        if !rho.is_finite() || rho <= 0.0 {
+            return Err(WeilBoundaryError::InvalidRho { rho });
+        }
+        if !self.generator.support().contains(rho) {
+            return Ok(0.0);
+        }
+        Ok(self.generator_value_and_second_log_derivative_inside(rho).0)
     }
 
     /// Evaluate `Qg(rho)` with
@@ -56,9 +60,7 @@ impl CompactWeilTestFunction {
     /// not used in this audit.
     pub fn q_value(self, rho: f64) -> Result<f64, WeilBoundaryError> {
         q_on_support(self.generator.support(), rho, |rho| {
-            let (value, second_log_derivative) =
-                self.generator_value_and_second_log_derivative_inside(rho);
-            q_from_log_second_derivative(value, second_log_derivative)
+            self.generator_value_and_second_log_derivative_inside(rho)
         })
     }
 
@@ -150,9 +152,9 @@ impl CompactWeilBoundaryAudit {
     #[inline]
     pub fn max_abs_moment(self) -> f64 {
         self.moments
-            .plus_half()
+            .plus_half
             .abs()
-            .max(self.moments.minus_half().abs())
+            .max(self.moments.minus_half.abs())
     }
 
     #[inline]
@@ -205,7 +207,12 @@ mod tests {
             test_function.q_value(2.0 * support.upper()).unwrap(),
             0.0
         );
-        assert!(test_function.q_value(0.5 * (support.lower() + support.upper())).unwrap().is_finite());
+        assert!(
+            test_function
+                .q_value(0.5 * (support.lower() + support.upper()))
+                .unwrap()
+                .is_finite()
+        );
     }
 
     #[test]
@@ -217,8 +224,8 @@ mod tests {
         assert!(
             audit.satisfies(5.0e-12),
             "plus={:.3e} minus={:.3e}",
-            audit.moments().plus_half(),
-            audit.moments().minus_half()
+            audit.moments().plus_half,
+            audit.moments().minus_half
         );
     }
 
