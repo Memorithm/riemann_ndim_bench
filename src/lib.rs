@@ -30,6 +30,7 @@ pub mod weil_boundary;
 pub mod weil_finite_functional;
 pub mod weil_generalized_spectrum;
 pub mod weil_quadratic_matrix;
+pub mod weil_refinement;
 pub mod weil_support;
 pub mod weil_support_sweep;
 
