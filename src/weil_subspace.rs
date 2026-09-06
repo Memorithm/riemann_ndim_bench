@@ -229,9 +229,9 @@ pub fn audit_finite_weil_legendre_subspaces(
         .map(LegendreDegreeSubspace::maximum_degree)
         .max()
         .expect("validated non-empty subspace set has a maximum degree");
-    let parent_dimension = maximum_degree.checked_add(1).ok_or(
-        FiniteWeilSubspaceError::ParentDimensionOverflow { maximum_degree },
-    )?;
+    let parent_dimension = maximum_degree
+        .checked_add(1)
+        .ok_or(FiniteWeilSubspaceError::ParentDimensionOverflow { maximum_degree })?;
 
     let parent = audit_finite_weil_generalized_spectrum(
         bump,
@@ -346,8 +346,7 @@ fn solve_dense_subspace(
         for j in 0..dimension {
             let mut sum = 0.0_f64;
             for k in 0..dimension {
-                sum += gram_vectors[(i, k)] * gram_vectors[(j, k)]
-                    / raw_gram_eigenvalues[k].sqrt();
+                sum += gram_vectors[(i, k)] * gram_vectors[(j, k)] / raw_gram_eigenvalues[k].sqrt();
             }
             checked_finite("subspace Gram inverse square root", sum)?;
             inverse_sqrt[i * dimension + j] = sum;
@@ -370,10 +369,10 @@ fn solve_dense_subspace(
     }
     checked_finite("subspace whitened asymmetry", max_whitened_asymmetry)?;
 
-    let normalized_matrix =
-        Mat::from_fn(dimension, dimension, |i, j| whitened[i * dimension + j]);
-    let normalized_decomposition = SelfAdjointEigen::new(normalized_matrix.as_ref(), Side::Lower)
-        .map_err(|_| FiniteWeilSubspaceError::NormalizedDecompositionFailed)?;
+    let normalized_matrix = Mat::from_fn(dimension, dimension, |i, j| whitened[i * dimension + j]);
+    let normalized_decomposition =
+        SelfAdjointEigen::new(normalized_matrix.as_ref(), Side::Lower)
+            .map_err(|_| FiniteWeilSubspaceError::NormalizedDecompositionFailed)?;
     let normalized_diagonal = normalized_decomposition.S().column_vector();
     let mut generalized_eigenvalues = (0..dimension)
         .map(|index| normalized_diagonal[index])
@@ -449,15 +448,8 @@ mod tests {
     #[test]
     fn leading_subspace_matches_existing_principal_generalized_spectrum() {
         let selected = LegendreDegreeSubspace::new(vec![0, 1, 2]).unwrap();
-        let audit = audit_finite_weil_legendre_subspaces(
-            bump(),
-            &[selected],
-            40,
-            40,
-            56,
-            56,
-        )
-        .unwrap();
+        let audit =
+            audit_finite_weil_legendre_subspaces(bump(), &[selected], 40, 40, 56, 56).unwrap();
         let direct = audit_finite_weil_generalized_spectrum(bump(), 3, 40, 40, 56, 56).unwrap();
         let principal = direct.principal_spectrum(3).unwrap();
         let selected = &audit.spectra()[0];
@@ -484,15 +476,8 @@ mod tests {
     fn non_leading_even_degree_subspace_is_audited_without_sign_assumption() {
         let leading = LegendreDegreeSubspace::new(vec![0, 1, 2]).unwrap();
         let even = LegendreDegreeSubspace::new(vec![0, 2, 4]).unwrap();
-        let audit = audit_finite_weil_legendre_subspaces(
-            bump(),
-            &[leading, even],
-            32,
-            32,
-            48,
-            48,
-        )
-        .unwrap();
+        let audit =
+            audit_finite_weil_legendre_subspaces(bump(), &[leading, even], 32, 32, 48, 48).unwrap();
 
         assert_eq!(audit.computed_legendre_dimension(), 5);
         assert_eq!(audit.spectra().len(), 2);
