@@ -19,6 +19,7 @@
 use std::fmt;
 
 use crate::semilocal_compact_archimedean::CompactArchimedeanBump;
+use crate::weil_boundary::WeilBoundaryError;
 use crate::weil_generalized_spectrum::{
     FiniteWeilGeneralizedSpectrumError, audit_finite_weil_generalized_spectrum,
 };
@@ -141,6 +142,7 @@ pub enum FiniteWeilBernsteinProbeError {
     IndexOutOfRange { degree: usize, index: usize },
     ParentDimensionOverflow { degree: usize },
     Parent(FiniteWeilGeneralizedSpectrumError),
+    Boundary(WeilBoundaryError),
     NonPositiveGramNorm { index: usize, value: f64 },
     NonFiniteEvaluation { stage: &'static str, value: f64 },
 }
@@ -162,6 +164,7 @@ impl fmt::Display for FiniteWeilBernsteinProbeError {
                 "Bernstein degree {degree} cannot be converted to a parent dimension"
             ),
             Self::Parent(error) => write!(f, "parent generalized-spectrum audit failed: {error}"),
+            Self::Boundary(error) => write!(f, "Bernstein boundary audit failed: {error}"),
             Self::NonPositiveGramNorm { index, value } => write!(
                 f,
                 "Bernstein probe {index} has non-positive numerical Gram norm squared: {value}"
@@ -178,6 +181,12 @@ impl std::error::Error for FiniteWeilBernsteinProbeError {}
 impl From<FiniteWeilGeneralizedSpectrumError> for FiniteWeilBernsteinProbeError {
     fn from(value: FiniteWeilGeneralizedSpectrumError) -> Self {
         Self::Parent(value)
+    }
+}
+
+impl From<WeilBoundaryError> for FiniteWeilBernsteinProbeError {
+    fn from(value: WeilBoundaryError) -> Self {
+        Self::Boundary(value)
     }
 }
 
@@ -240,34 +249,29 @@ pub fn audit_finite_weil_bernstein_probes(
     let mut parent_moments = Vec::with_capacity(parent_dimension);
     for legendre_degree in 0..parent_dimension {
         parent_moments.push(
-            CompactWeilBasisFunction::new(bump, legendre_degree).boundary_moments(boundary_order)?,
+            CompactWeilBasisFunction::new(bump, legendre_degree)
+                .boundary_moments(boundary_order)?,
         );
     }
 
     let mut probes = Vec::with_capacity(indices.len());
     for &index in indices {
         let coefficients = bernstein_legendre_coefficients(degree, index)?;
-        let raw_quadratic_value = quadratic_form_from_parent(
-            &coefficients,
-            parent_dimension,
-            |row, col| {
+        let raw_quadratic_value =
+            quadratic_form_from_parent(&coefficients, parent_dimension, |row, col| {
                 parent
                     .pairing()
                     .entry(row, col)
                     .expect("Bernstein coefficient index is inside parent pairing matrix")
-            },
-        );
+            });
         checked_finite("Bernstein raw quadratic value", raw_quadratic_value)?;
 
-        let gram_norm_squared = quadratic_form_from_parent(
-            &coefficients,
-            parent_dimension,
-            |row, col| {
+        let gram_norm_squared =
+            quadratic_form_from_parent(&coefficients, parent_dimension, |row, col| {
                 parent
                     .gram_entry(row, col)
                     .expect("Bernstein coefficient index is inside parent Gram matrix")
-            },
-        );
+            });
         checked_finite("Bernstein Gram norm squared", gram_norm_squared)?;
         if gram_norm_squared <= 0.0 {
             return Err(FiniteWeilBernsteinProbeError::NonPositiveGramNorm {
@@ -324,10 +328,7 @@ pub fn audit_finite_weil_bernstein_probes(
     })
 }
 
-fn validate_indices(
-    degree: usize,
-    indices: &[usize],
-) -> Result<(), FiniteWeilBernsteinProbeError> {
+fn validate_indices(degree: usize, indices: &[usize]) -> Result<(), FiniteWeilBernsteinProbeError> {
     if indices.is_empty() {
         return Err(FiniteWeilBernsteinProbeError::EmptyIndexSet);
     }
@@ -338,10 +339,12 @@ fn validate_indices(
     }
     for pair in indices.windows(2) {
         if pair[0] >= pair[1] {
-            return Err(FiniteWeilBernsteinProbeError::IndicesNotStrictlyIncreasing {
-                previous: pair[0],
-                next: pair[1],
-            });
+            return Err(
+                FiniteWeilBernsteinProbeError::IndicesNotStrictlyIncreasing {
+                    previous: pair[0],
+                    next: pair[1],
+                },
+            );
         }
     }
     Ok(())
@@ -428,10 +431,7 @@ fn shifted_legendre_value(degree: usize, t: f64) -> f64 {
     p_nm1
 }
 
-fn checked_finite(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilBernsteinProbeError> {
+fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilBernsteinProbeError> {
     if value.is_finite() {
         Ok(())
     } else {
