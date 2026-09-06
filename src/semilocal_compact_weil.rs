@@ -70,11 +70,10 @@ impl CompactWeilTestFunction {
         self,
         quadrature_order: usize,
     ) -> Result<CompactWeilBoundaryAudit, WeilBoundaryError> {
-        let moments = critical_boundary_moments(
-            self.generator.support(),
-            quadrature_order,
-            |rho| self.q_value_inside(rho),
-        )?;
+        let moments =
+            critical_boundary_moments(self.generator.support(), quadrature_order, |rho| {
+                self.q_value_inside(rho)
+            })?;
         Ok(CompactWeilBoundaryAudit {
             quadrature_order,
             moments,
@@ -199,14 +198,8 @@ mod tests {
 
         assert_eq!(test_function.q_value(support.lower()).unwrap(), 0.0);
         assert_eq!(test_function.q_value(support.upper()).unwrap(), 0.0);
-        assert_eq!(
-            test_function.q_value(0.5 * support.lower()).unwrap(),
-            0.0
-        );
-        assert_eq!(
-            test_function.q_value(2.0 * support.upper()).unwrap(),
-            0.0
-        );
+        assert_eq!(test_function.q_value(0.5 * support.lower()).unwrap(), 0.0);
+        assert_eq!(test_function.q_value(2.0 * support.upper()).unwrap(), 0.0);
         assert!(
             test_function
                 .q_value(0.5 * (support.lower() + support.upper()))
