@@ -9,6 +9,7 @@ pub mod semilocal_cavity_asymptotic;
 pub mod semilocal_cavity_drift;
 pub mod semilocal_cavity_transport;
 pub mod semilocal_compact_archimedean;
+pub mod semilocal_compact_weil;
 pub mod semilocal_factorizable_poisson;
 pub mod semilocal_fourier_multiplier;
 pub mod semilocal_frozen_cavity;
