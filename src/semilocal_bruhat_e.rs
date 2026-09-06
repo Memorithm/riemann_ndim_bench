@@ -338,10 +338,10 @@ pub fn compare_finite_bruhat_e_bridge(
     let original_product = FiniteLocalBallProduct::new(places.clone(), original_balls)?;
     let monoid = SemilocalPoissonMonoid::new(places.clone());
 
-    if let Some(required_m) = groups.last().map(|group| group.monoid_representative()) {
-        if required_m > max_m {
-            return Err(BruhatEBridgeError::MaxMonoidBoundTooSmall { max_m, required_m });
-        }
+    if let Some(required_m) = groups.last().map(|group| group.monoid_representative())
+        && required_m > max_m
+    {
+        return Err(BruhatEBridgeError::MaxMonoidBoundTooSmall { max_m, required_m });
     }
 
     let mut archimedean_values = BTreeMap::new();
