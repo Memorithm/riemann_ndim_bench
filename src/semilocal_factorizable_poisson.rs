@@ -116,8 +116,7 @@ impl FactorizablePoissonComparison {
     #[inline]
     pub fn combined_tail_bound(&self) -> f64 {
         self.original_sum.absolute_tail_bound()
-            + self.fourier_local_scale
-                * self.transformed_archimedean_sum.absolute_tail_bound()
+            + self.fourier_local_scale * self.transformed_archimedean_sum.absolute_tail_bound()
     }
 }
 
@@ -134,7 +133,10 @@ impl fmt::Display for FactorizablePoissonError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::DuplicatePrime { prime } => {
-                write!(f, "factorizable local ball list repeats finite place p={prime}")
+                write!(
+                    f,
+                    "factorizable local ball list repeats finite place p={prime}"
+                )
             }
             Self::ScaleOutOfRange => write!(
                 f,
@@ -212,8 +214,7 @@ pub fn compare_factorizable_ball_poisson(
         return Err(FactorizablePoissonError::ScaleOutOfRange);
     }
 
-    let original_sum =
-        certified_source_fixture_lattice_sum(diagonal_lattice_scale, max_abs_n)?;
+    let original_sum = certified_source_fixture_lattice_sum(diagonal_lattice_scale, max_abs_n)?;
     let transformed_archimedean_sum =
         certified_source_fixture_fourier_lattice_sum(fourier_local_scale, max_abs_n)?;
 
@@ -259,8 +260,7 @@ mod tests {
     fn nontrivial_local_ball_and_dual_scale_are_both_exercised() {
         for exponent in [-2, -1, 1, 2] {
             let comparison =
-                compare_factorizable_ball_poisson(&[LocalBallSpec::new(3, exponent)], 256)
-                    .unwrap();
+                compare_factorizable_ball_poisson(&[LocalBallSpec::new(3, exponent)], 256).unwrap();
             let expected = 3.0_f64.powi(exponent);
             assert!((comparison.diagonal_lattice_scale() - expected).abs() < 2.0e-15 * expected);
             assert!(
