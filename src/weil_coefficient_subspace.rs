@@ -107,7 +107,9 @@ impl FiniteWeilCoefficientSubspaceAudit {
 #[derive(Debug)]
 pub enum FiniteWeilCoefficientSubspaceError {
     EmptyCoefficientSet,
-    EmptyCoefficientVector { column: usize },
+    EmptyCoefficientVector {
+        column: usize,
+    },
     CoefficientDimensionMismatch {
         column: usize,
         expected: usize,
@@ -117,16 +119,24 @@ pub enum FiniteWeilCoefficientSubspaceError {
     Generalized(FiniteWeilGeneralizedSpectrumError),
     RawDecompositionFailed,
     GramDecompositionFailed,
-    GramNotPositiveDefinite { minimum_eigenvalue: f64 },
+    GramNotPositiveDefinite {
+        minimum_eigenvalue: f64,
+    },
     NormalizedDecompositionFailed,
-    NonFiniteEvaluation { stage: &'static str, value: f64 },
+    NonFiniteEvaluation {
+        stage: &'static str,
+        value: f64,
+    },
 }
 
 impl fmt::Display for FiniteWeilCoefficientSubspaceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::EmptyCoefficientSet => {
-                write!(f, "finite Weil coefficient subspace must contain at least one vector")
+                write!(
+                    f,
+                    "finite Weil coefficient subspace must contain at least one vector"
+                )
             }
             Self::EmptyCoefficientVector { column } => {
                 write!(f, "finite Weil coefficient vector {column} is empty")
@@ -139,7 +149,9 @@ impl fmt::Display for FiniteWeilCoefficientSubspaceError {
                 f,
                 "finite Weil coefficient vector {column} has length {actual}; expected {expected}"
             ),
-            Self::Boundary(error) => write!(f, "coefficient-subspace boundary audit failed: {error}"),
+            Self::Boundary(error) => {
+                write!(f, "coefficient-subspace boundary audit failed: {error}")
+            }
             Self::Generalized(error) => {
                 write!(f, "coefficient-subspace leading control failed: {error}")
             }
@@ -154,10 +166,16 @@ impl fmt::Display for FiniteWeilCoefficientSubspaceError {
                 "coefficient-subspace Gram matrix is not numerically positive definite: lambda_min={minimum_eigenvalue}"
             ),
             Self::NormalizedDecompositionFailed => {
-                write!(f, "coefficient-subspace normalized eigendecomposition failed")
+                write!(
+                    f,
+                    "coefficient-subspace normalized eigendecomposition failed"
+                )
             }
             Self::NonFiniteEvaluation { stage, value } => {
-                write!(f, "non-finite coefficient-subspace value at {stage}: {value}")
+                write!(
+                    f,
+                    "non-finite coefficient-subspace value at {stage}: {value}"
+                )
             }
         }
     }
@@ -328,9 +346,11 @@ fn solve_transformed_pair(
         .min_by(f64::total_cmp)
         .ok_or(FiniteWeilCoefficientSubspaceError::GramDecompositionFailed)?;
     if minimum_gram <= 0.0 {
-        return Err(FiniteWeilCoefficientSubspaceError::GramNotPositiveDefinite {
-            minimum_eigenvalue: minimum_gram,
-        });
+        return Err(
+            FiniteWeilCoefficientSubspaceError::GramNotPositiveDefinite {
+                minimum_eigenvalue: minimum_gram,
+            },
+        );
     }
     let maximum_gram = raw_gram_eigenvalues
         .iter()
@@ -338,7 +358,10 @@ fn solve_transformed_pair(
         .max_by(f64::total_cmp)
         .ok_or(FiniteWeilCoefficientSubspaceError::GramDecompositionFailed)?;
     let gram_condition_number = maximum_gram / minimum_gram;
-    checked_finite("coefficient-subspace Gram condition number", gram_condition_number)?;
+    checked_finite(
+        "coefficient-subspace Gram condition number",
+        gram_condition_number,
+    )?;
 
     let mut inverse_sqrt = vec![0.0_f64; dimension * dimension];
     for i in 0..dimension {
@@ -366,7 +389,10 @@ fn solve_transformed_pair(
             whitened[j * dimension + i] = symmetric;
         }
     }
-    checked_finite("coefficient-subspace whitened asymmetry", max_whitened_asymmetry)?;
+    checked_finite(
+        "coefficient-subspace whitened asymmetry",
+        max_whitened_asymmetry,
+    )?;
 
     let whitened_matrix = Mat::from_fn(dimension, dimension, |i, j| whitened[i * dimension + j]);
     let normalized_decomposition = SelfAdjointEigen::new(whitened_matrix.as_ref(), Side::Lower)
@@ -457,13 +483,9 @@ mod tests {
     fn coefficient_dimension_mismatch_is_rejected() {
         let bump = bump();
         let parent = audit_finite_weil_generalized_spectrum(bump, 2, 20, 20, 28, 28).unwrap();
-        let error = audit_finite_weil_coefficient_subspace(
-            bump,
-            &parent,
-            &[vec![1.0, 0.0], vec![0.0]],
-            28,
-        )
-        .unwrap_err();
+        let error =
+            audit_finite_weil_coefficient_subspace(bump, &parent, &[vec![1.0, 0.0], vec![0.0]], 28)
+                .unwrap_err();
         assert!(matches!(
             error,
             FiniteWeilCoefficientSubspaceError::CoefficientDimensionMismatch { .. }
