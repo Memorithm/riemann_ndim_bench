@@ -10,6 +10,7 @@ pub mod semilocal_cavity_transport;
 pub mod semilocal_factorizable_poisson;
 pub mod semilocal_fourier_multiplier;
 pub mod semilocal_frozen_cavity;
+pub mod semilocal_orbit_grouping;
 pub mod semilocal_padic_fourier;
 pub mod semilocal_poisson;
 pub mod semilocal_qs;
