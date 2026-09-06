@@ -141,11 +141,14 @@ pub fn group_qs_samples_by_m(
         let transported_balls = action.transport_complete_product(local_balls)?;
         let representative = decomposition.monoid_element();
 
-        grouped.entry(representative).or_default().push(QsOrbitTerm {
-            sample,
-            decomposition,
-            transported_balls,
-        });
+        grouped
+            .entry(representative)
+            .or_default()
+            .push(QsOrbitTerm {
+                sample,
+                decomposition,
+                transported_balls,
+            });
     }
 
     Ok(grouped
@@ -217,8 +220,8 @@ mod tests {
     fn zero_is_rejected_instead_of_being_silently_assigned_an_orbit() {
         let places = FinitePlaceSet::new(vec![2]).unwrap();
         let zero = QsRational::new(0, 8, &places).unwrap();
-        let error = group_qs_samples_by_m(&[zero], &places, &[LocalBallSpec::new(2, 0)])
-            .unwrap_err();
+        let error =
+            group_qs_samples_by_m(&[zero], &places, &[LocalBallSpec::new(2, 0)]).unwrap_err();
         assert_eq!(
             error,
             OrbitGroupingError::Qs(QsArithmeticError::ZeroHasNoUnitMonoidDecomposition)
