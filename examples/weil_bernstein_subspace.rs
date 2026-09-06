@@ -9,7 +9,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let selected = BernsteinIndexSubspace::new(6, vec![0, 2, 4, 6])?;
     let audit = audit_finite_weil_bernstein_subspace(bump, &selected, 72, 72, 96, 96)?;
 
-    println!("family,degree,indices,dimension,raw_min,generalized_min,gram_condition,boundary_residual,whitened_asymmetry");
+    println!(
+        "family,degree,indices,dimension,raw_min,generalized_min,gram_condition,boundary_residual,whitened_asymmetry"
+    );
     let indices = audit
         .indices()
         .iter()
