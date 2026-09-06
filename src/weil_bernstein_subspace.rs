@@ -357,9 +357,9 @@ fn bilinear_parent_form(
     mut entry: impl FnMut(usize, usize) -> f64,
 ) -> f64 {
     let mut total = 0.0_f64;
-    for i in 0..parent_dimension {
-        for j in 0..parent_dimension {
-            total += left[i] * entry(i, j) * right[j];
+    for (i, &left_value) in left.iter().take(parent_dimension).enumerate() {
+        for (j, &right_value) in right.iter().take(parent_dimension).enumerate() {
+            total += left_value * entry(i, j) * right_value;
         }
     }
     total
