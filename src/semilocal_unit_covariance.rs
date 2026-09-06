@@ -156,8 +156,7 @@ pub fn compare_unit_covariance(
 
     let original = compare_factorizable_ball_poisson(original_balls, max_abs_n)?;
 
-    let transported_fixture =
-        compare_factorizable_ball_poisson(&transported_balls, max_abs_n)?;
+    let transported_fixture = compare_factorizable_ball_poisson(&transported_balls, max_abs_n)?;
     let transported_local_lattice_scale = transported_fixture.diagonal_lattice_scale();
     let archimedean_unit_scale = action.archimedean_absolute_scale()?;
     let effective_transported_step = archimedean_unit_scale * transported_local_lattice_scale;
@@ -205,13 +204,8 @@ mod tests {
     fn dyadic_unit_covariance_is_exactly_representable() {
         let places = FinitePlaceSet::new(vec![2]).unwrap();
         let q = QsRational::new(3, 8, &places).unwrap();
-        let comparison = compare_unit_covariance(
-            q,
-            &places,
-            &[LocalBallSpec::new(2, 1)],
-            256,
-        )
-        .unwrap();
+        let comparison =
+            compare_unit_covariance(q, &places, &[LocalBallSpec::new(2, 1)], 256).unwrap();
 
         assert_eq!(comparison.monoid_representative(), 3);
         assert_eq!(comparison.transported_balls(), &[LocalBallSpec::new(2, 4)]);
