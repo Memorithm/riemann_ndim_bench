@@ -224,7 +224,7 @@ impl CompactBruhatEBridgeAudit {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug)]
 pub enum CompactArchimedeanError {
     ZeroNumerator,
     ZeroDenominator,
