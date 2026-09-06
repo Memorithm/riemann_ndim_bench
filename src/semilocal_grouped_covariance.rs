@@ -189,11 +189,12 @@ pub fn compare_grouped_unit_covariance(
     for &sample in samples {
         let comparison = compare_unit_covariance(sample, places, original_balls, max_abs_n)?;
         let representative = comparison.monoid_representative();
-        let weight = *weights
-            .get(&representative)
-            .ok_or(GroupedCovarianceError::InconsistentOrbitData {
-                monoid_representative: representative,
-            })?;
+        let weight =
+            *weights
+                .get(&representative)
+                .ok_or(GroupedCovarianceError::InconsistentOrbitData {
+                    monoid_representative: representative,
+                })?;
         ungrouped_direct_total += weight * comparison.original().original_sum().value();
         ungrouped_direct_tail +=
             weight.abs() * comparison.original().original_sum().absolute_tail_bound();
@@ -282,17 +283,11 @@ mod tests {
             QsRational::new(5, 4, &places).unwrap(),
         ];
 
-        let audit = compare_grouped_unit_covariance(
-            &samples,
-            &places,
-            &balls,
-            256,
-            |m| match m {
-                3 => 1.0,
-                5 => 2.0,
-                _ => unreachable!(),
-            },
-        )
+        let audit = compare_grouped_unit_covariance(&samples, &places, &balls, 256, |m| match m {
+            3 => 1.0,
+            5 => 2.0,
+            _ => unreachable!(),
+        })
         .unwrap();
 
         assert_eq!(audit.groups().len(), 2);
@@ -316,14 +311,9 @@ mod tests {
             QsRational::new(14, 1, &places).unwrap(),
         ];
 
-        let audit = compare_grouped_unit_covariance(
-            &samples,
-            &places,
-            &balls,
-            256,
-            |m| 1.0 / m as f64,
-        )
-        .unwrap();
+        let audit =
+            compare_grouped_unit_covariance(&samples, &places, &balls, 256, |m| 1.0 / m as f64)
+                .unwrap();
 
         assert_eq!(audit.groups().len(), 2);
         assert_audit_close(&audit, 1.0e-12);
