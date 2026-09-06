@@ -229,21 +229,36 @@ impl FiniteWeilSineTruncationAudit {
 pub enum FiniteWeilSineTruncationError {
     EmptyModeSet,
     ZeroMode,
-    ModesNotStrictlyIncreasing { previous: usize, next: usize },
+    ModesNotStrictlyIncreasing {
+        previous: usize,
+        next: usize,
+    },
     EmptyParentDimensionSet,
-    ParentDimensionsNotStrictlyIncreasing { previous: usize, next: usize },
-    ParentDimensionTooSmall { parent_dimension: usize, modes: usize },
+    ParentDimensionsNotStrictlyIncreasing {
+        previous: usize,
+        next: usize,
+    },
+    ParentDimensionTooSmall {
+        parent_dimension: usize,
+        modes: usize,
+    },
     Quadrature(QuadratureError),
     Generalized(FiniteWeilGeneralizedSpectrumError),
     CoefficientSubspace(FiniteWeilCoefficientSubspaceError),
-    NonFiniteEvaluation { stage: &'static str, value: f64 },
+    NonFiniteEvaluation {
+        stage: &'static str,
+        value: f64,
+    },
 }
 
 impl fmt::Display for FiniteWeilSineTruncationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::EmptyModeSet => write!(f, "sine-enriched finite Weil family must contain a mode"),
-            Self::ZeroMode => write!(f, "sine-enriched finite Weil modes must be positive integers"),
+            Self::ZeroMode => write!(
+                f,
+                "sine-enriched finite Weil modes must be positive integers"
+            ),
             Self::ModesNotStrictlyIncreasing { previous, next } => write!(
                 f,
                 "sine modes must be strictly increasing: previous={previous}, next={next}"
@@ -310,9 +325,8 @@ pub fn sine_legendre_coefficients(
     for degree in 0..parent_dimension {
         let mut integral = 0.0_f64;
         for (&node, &weight) in quadrature.nodes().iter().zip(quadrature.weights().iter()) {
-            integral += weight
-                * (mode as f64 * PI * node).sin()
-                * shifted_legendre_value(degree, node);
+            integral +=
+                weight * (mode as f64 * PI * node).sin() * shifted_legendre_value(degree, node);
         }
         let coefficient = (2 * degree + 1) as f64 * integral;
         checked_finite("sine Legendre coefficient", coefficient)?;
@@ -360,7 +374,10 @@ pub fn audit_finite_weil_sine_truncation(
             let residual = sine_reconstruction_residual(mode, coefficient_vector);
             checked_finite("sine reconstruction residual", residual)?;
             max_reconstruction_residual = max_reconstruction_residual.max(residual);
-            let l1 = coefficient_vector.iter().map(|value| value.abs()).sum::<f64>();
+            let l1 = coefficient_vector
+                .iter()
+                .map(|value| value.abs())
+                .sum::<f64>();
             checked_finite("sine coefficient L1 norm", l1)?;
             max_coefficient_l1_norm = max_coefficient_l1_norm.max(l1);
         }
@@ -370,8 +387,8 @@ pub fn audit_finite_weil_sine_truncation(
         let generalized_minimum_eigenvalue = subspace.minimum_generalized_eigenvalue();
         let leading_legendre_generalized_minimum_eigenvalue =
             subspace.leading_legendre_generalized_minimum();
-        let generalized_family_delta = generalized_minimum_eigenvalue
-            - leading_legendre_generalized_minimum_eigenvalue;
+        let generalized_family_delta =
+            generalized_minimum_eigenvalue - leading_legendre_generalized_minimum_eigenvalue;
 
         samples.push(SineTruncationSample {
             parent_dimension,
@@ -481,10 +498,7 @@ fn shifted_legendre_value(degree: usize, t: f64) -> f64 {
     p_nm1
 }
 
-fn checked_finite(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilSineTruncationError> {
+fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilSineTruncationError> {
     if value.is_finite() {
         Ok(())
     } else {
@@ -530,8 +544,7 @@ mod tests {
     fn truncation_sweep_records_finite_diagnostics_without_sign_assumption() {
         let modes = SineModeSet::new(vec![1, 2]).unwrap();
         let audit =
-            audit_finite_weil_sine_truncation(bump(), &modes, &[3, 5], 48, 20, 20, 28, 28)
-                .unwrap();
+            audit_finite_weil_sine_truncation(bump(), &modes, &[3, 5], 48, 20, 20, 28, 28).unwrap();
 
         assert_eq!(audit.modes(), &modes);
         assert_eq!(audit.parent_dimensions(), &[3, 5]);
