@@ -1,9 +1,7 @@
 use std::env;
 use std::error::Error;
 
-use riemann_ndim_bench::semilocal_compact_archimedean::{
-    CompactArchimedeanBump, PositiveRational,
-};
+use riemann_ndim_bench::semilocal_compact_archimedean::{CompactArchimedeanBump, PositiveRational};
 use riemann_ndim_bench::weil_generalized_spectrum::audit_finite_weil_generalized_spectrum;
 
 fn parse_usize(index: usize, default: usize) -> Result<usize, Box<dyn Error>> {
@@ -20,10 +18,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let boundary_order = parse_usize(4, 128)?;
     let gram_order = parse_usize(5, 128)?;
 
-    let bump = CompactArchimedeanBump::new(
-        PositiveRational::new(1, 2)?,
-        PositiveRational::new(7, 2)?,
-    )?;
+    let bump =
+        CompactArchimedeanBump::new(PositiveRational::new(1, 2)?, PositiveRational::new(7, 2)?)?;
     let audit = audit_finite_weil_generalized_spectrum(
         bump,
         max_dimension,
