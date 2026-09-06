@@ -4,15 +4,7 @@ use riemann_ndim_bench::weil_bernstein_probe::audit_finite_weil_bernstein_probes
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bump =
         CompactArchimedeanBump::new(PositiveRational::new(1, 2)?, PositiveRational::new(7, 2)?)?;
-    let audit = audit_finite_weil_bernstein_probes(
-        bump,
-        6,
-        &[0, 2, 4, 6],
-        72,
-        72,
-        96,
-        96,
-    )?;
+    let audit = audit_finite_weil_bernstein_probes(bump, 6, &[0, 2, 4, 6], 72, 72, 96, 96)?;
 
     println!(
         "degree,index,raw_quadratic,gram_norm_squared,generalized_rayleigh,boundary_residual,reconstruction_residual,coefficient_l1"
