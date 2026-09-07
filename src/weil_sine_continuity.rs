@@ -349,7 +349,10 @@ impl fmt::Display for FiniteWeilSineContinuityError {
             Self::Pairing(error) => write!(f, "compact Weil pairing failed: {error}"),
             Self::Boundary(error) => write!(f, "compact Weil norm evaluation failed: {error}"),
             Self::NonFiniteEvaluation { stage, value } => {
-                write!(f, "non-finite sine continuity diagnostic at {stage}: {value}")
+                write!(
+                    f,
+                    "non-finite sine continuity diagnostic at {stage}: {value}"
+                )
             }
         }
     }
@@ -515,8 +518,7 @@ pub fn audit_finite_weil_sine_continuity(
                     projected_pairing: projected.value,
                     pairing_residual,
                     pole_residual: (direct.pole_term - projected.pole_term).abs(),
-                    archimedean_residual: (direct.archimedean_term
-                        - projected.archimedean_term)
+                    archimedean_residual: (direct.archimedean_term - projected.archimedean_term)
                         .abs(),
                     prime_residual: (direct.prime_total - projected.prime_total).abs(),
                     l2_perturbation_scale,
@@ -650,7 +652,10 @@ where
         ("projected L2 norm", projected_l2_norm),
         ("L2 error", l2_error),
         ("relative L2 error", relative_l2_error),
-        ("observed maximum absolute error", observed_max_absolute_error),
+        (
+            "observed maximum absolute error",
+            observed_max_absolute_error,
+        ),
     ] {
         checked_finite(stage, value)?;
     }
@@ -744,10 +749,7 @@ fn check_entry(entry: SinePairingContinuityEntry) -> Result<(), FiniteWeilSineCo
     Ok(())
 }
 
-fn checked_finite(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilSineContinuityError> {
+fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilSineContinuityError> {
     if value.is_finite() {
         Ok(())
     } else {
@@ -771,13 +773,9 @@ mod tests {
     #[test]
     fn continuity_probe_records_l2_and_pairing_residuals_without_theorem_claim() {
         let modes = SineModeSet::new(vec![1, 2]).unwrap();
-        let config = SineContinuityProbeConfig::new(
-            40,
-            32,
-            CompactWeilPairingConfig::new(20, 20, 28),
-        );
-        let audit =
-            audit_finite_weil_sine_continuity(bump(), &modes, &[3, 5], config).unwrap();
+        let config =
+            SineContinuityProbeConfig::new(40, 32, CompactWeilPairingConfig::new(20, 20, 28));
+        let audit = audit_finite_weil_sine_continuity(bump(), &modes, &[3, 5], config).unwrap();
 
         assert_eq!(audit.modes(), &modes);
         assert_eq!(audit.parent_dimensions(), &[3, 5]);
@@ -814,11 +812,8 @@ mod tests {
     #[test]
     fn continuity_probe_rejects_invalid_parent_axis() {
         let modes = SineModeSet::new(vec![1]).unwrap();
-        let config = SineContinuityProbeConfig::new(
-            16,
-            16,
-            CompactWeilPairingConfig::new(12, 12, 16),
-        );
+        let config =
+            SineContinuityProbeConfig::new(16, 16, CompactWeilPairingConfig::new(12, 12, 16));
         assert!(matches!(
             audit_finite_weil_sine_continuity(bump(), &modes, &[], config),
             Err(FiniteWeilSineContinuityError::EmptyParentDimensionSet)
