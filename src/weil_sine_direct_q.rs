@@ -484,7 +484,7 @@ fn validate_parent_dimensions(
     if parent_dimensions.is_empty() {
         return Err(FiniteWeilDirectSineError::EmptyParentDimensionSet);
     }
-    if parent_dimensions.iter().any(|&dimension| dimension == 0) {
+    if parent_dimensions.contains(&0) {
         return Err(FiniteWeilDirectSineError::ZeroParentDimension);
     }
     for pair in parent_dimensions.windows(2) {
