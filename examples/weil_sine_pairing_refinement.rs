@@ -14,12 +14,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         SinePairingRefinementLevel::new(72, 48, 48, 72),
         SinePairingRefinementLevel::new(96, 64, 64, 96),
     ];
-    let grid = audit_finite_weil_sine_pairing_refinement(
-        bump,
-        &modes,
-        &parent_dimensions,
-        &levels,
-    )?;
+    let grid =
+        audit_finite_weil_sine_pairing_refinement(bump, &modes, &parent_dimensions, &levels)?;
 
     println!(
         "parent_dimension,coefficient_order,correlation_order,archimedean_order,boundary_order,pairing_amplitude,direct_projected_residual,normalized_residual,parent_matrix_projection_residual,pole_residual,archimedean_residual,prime_residual,direct_asymmetry,projected_asymmetry,direct_boundary,projected_boundary"
