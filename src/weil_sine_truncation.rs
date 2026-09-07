@@ -553,8 +553,7 @@ mod tests {
     fn truncation_sweep_records_finite_diagnostics_without_sign_assumption() {
         let modes = SineModeSet::new(vec![1, 2]).unwrap();
         let level = WeilQuadratureLevel::new(20, 20, 28, 28);
-        let audit =
-            audit_finite_weil_sine_truncation(bump(), &modes, &[3, 5], 48, level).unwrap();
+        let audit = audit_finite_weil_sine_truncation(bump(), &modes, &[3, 5], 48, level).unwrap();
 
         assert_eq!(audit.modes(), &modes);
         assert_eq!(audit.parent_dimensions(), &[3, 5]);
