@@ -271,22 +271,18 @@ pub fn bound_finite_weil_h1_pairing_perturbation(
     // Differentiate the translated right factor, or integrate by parts and
     // differentiate the left factor. Both are valid H1 bounds, so their minimum
     // is still a valid upper bound.
-    let derivative_on_right = left.error_l2 * right.max_log_derivative_l2()
-        + left.max_l2() * right.derivative_error_l2;
-    let derivative_on_left = left.derivative_error_l2 * right.max_l2()
-        + left.max_log_derivative_l2() * right.error_l2;
+    let derivative_on_right =
+        left.error_l2 * right.max_log_derivative_l2() + left.max_l2() * right.derivative_error_l2;
+    let derivative_on_left =
+        left.derivative_error_l2 * right.max_l2() + left.max_log_derivative_l2() * right.error_l2;
     let correlation_derivative_error_bound = derivative_on_right.min(derivative_on_left);
 
-    let pole_error_bound =
-        constants.pole_value_coefficient * correlation_value_error_bound;
-    let prime_error_bound =
-        constants.prime_value_coefficient * correlation_value_error_bound;
+    let pole_error_bound = constants.pole_value_coefficient * correlation_value_error_bound;
+    let prime_error_bound = constants.prime_value_coefficient * correlation_value_error_bound;
     let archimedean_error_bound = constants.archimedean_value_coefficient
         * correlation_value_error_bound
-        + constants.archimedean_derivative_coefficient
-            * correlation_derivative_error_bound;
-    let total_pairing_error_bound =
-        pole_error_bound + archimedean_error_bound + prime_error_bound;
+        + constants.archimedean_derivative_coefficient * correlation_derivative_error_bound;
+    let total_pairing_error_bound = pole_error_bound + archimedean_error_bound + prime_error_bound;
 
     for (stage, value) in [
         (
@@ -340,14 +336,12 @@ fn continuity_constants(
     // |Delta theta_sym(t)-Delta theta_sym(0)| <= 2Dt. Using sinh(t) >= t,
     // exp(t/2)-1 <= (t/2) exp(L/2), and exp(t/2) <= exp(L/2) on [0,L]
     // yields these explicit coefficients.
-    let source_coefficient = EULER_MASCHERONI
-        + (4.0 * PI * (support_ratio - 1.0) / (support_ratio + 1.0)).ln();
-    let archimedean_value_coefficient =
-        source_coefficient.abs() + 0.5 * log_span * sqrt_ratio;
+    let source_coefficient =
+        EULER_MASCHERONI + (4.0 * PI * (support_ratio - 1.0) / (support_ratio + 1.0)).ln();
+    let archimedean_value_coefficient = source_coefficient.abs() + 0.5 * log_span * sqrt_ratio;
     let archimedean_derivative_coefficient = log_span * sqrt_ratio;
-    let total_value_coefficient = pole_value_coefficient
-        + prime_value_coefficient
-        + archimedean_value_coefficient;
+    let total_value_coefficient =
+        pole_value_coefficient + prime_value_coefficient + archimedean_value_coefficient;
 
     for (stage, value) in [
         ("support ratio", support_ratio),
@@ -378,10 +372,7 @@ fn continuity_constants(
     })
 }
 
-fn checked_nonnegative(
-    field: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilH1ContinuityError> {
+fn checked_nonnegative(field: &'static str, value: f64) -> Result<(), FiniteWeilH1ContinuityError> {
     if value.is_finite() && value >= 0.0 {
         Ok(())
     } else {
@@ -389,10 +380,7 @@ fn checked_nonnegative(
     }
 }
 
-fn checked_finite(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilH1ContinuityError> {
+fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilH1ContinuityError> {
     if value.is_finite() && value >= 0.0 {
         Ok(())
     } else {
@@ -441,8 +429,13 @@ mod tests {
         assert!((constants.log_span() - 7.0_f64.ln()).abs() <= 1.0e-14);
         assert!((constants.pole_value_coefficient() - 4.535_573_676_110_727).abs() <= 1.0e-12);
         assert!((constants.prime_value_coefficient() - 20.593_577_312_307_954).abs() <= 1.0e-12);
-        assert!((constants.archimedean_value_coefficient() - 5.394_755_003_457_536).abs() <= 1.0e-12);
-        assert!((constants.archimedean_derivative_coefficient() - 5.148_394_328_076_988).abs() <= 1.0e-12);
+        assert!(
+            (constants.archimedean_value_coefficient() - 5.394_755_003_457_536).abs() <= 1.0e-12
+        );
+        assert!(
+            (constants.archimedean_derivative_coefficient() - 5.148_394_328_076_988).abs()
+                <= 1.0e-12
+        );
     }
 
     #[test]
@@ -464,16 +457,21 @@ mod tests {
         let right = bounds(1.3, 1.4, 0.08, 2.2, 2.3, 0.12);
         let forward = bound_finite_weil_h1_pairing_perturbation(bump(), left, right).unwrap();
         let reverse = bound_finite_weil_h1_pairing_perturbation(bump(), right, left).unwrap();
-        assert!((forward.correlation_value_error_bound()
-            - reverse.correlation_value_error_bound())
+        assert!(
+            (forward.correlation_value_error_bound() - reverse.correlation_value_error_bound())
+                .abs()
+                <= 1.0e-14
+        );
+        assert!(
+            (forward.correlation_derivative_error_bound()
+                - reverse.correlation_derivative_error_bound())
             .abs()
-            <= 1.0e-14);
-        assert!((forward.correlation_derivative_error_bound()
-            - reverse.correlation_derivative_error_bound())
-            .abs()
-            <= 1.0e-14);
-        assert!((forward.total_pairing_error_bound() - reverse.total_pairing_error_bound()).abs()
-            <= 1.0e-12);
+                <= 1.0e-14
+        );
+        assert!(
+            (forward.total_pairing_error_bound() - reverse.total_pairing_error_bound()).abs()
+                <= 1.0e-12
+        );
     }
 
     #[test]
