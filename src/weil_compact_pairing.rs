@@ -174,15 +174,23 @@ pub enum CompactWeilPairingError {
 impl fmt::Display for CompactWeilPairingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Quadrature(error) => write!(f, "compact Weil pairing quadrature failed: {error:?}"),
+            Self::Quadrature(error) => {
+                write!(f, "compact Weil pairing quadrature failed: {error:?}")
+            }
             Self::Boundary(error) => write!(f, "compact Weil evaluand failed: {error}"),
-            Self::SupportMismatch => write!(f, "mixed compact Weil evaluands must share one exact support"),
+            Self::SupportMismatch => write!(
+                f,
+                "mixed compact Weil evaluands must share one exact support"
+            ),
             Self::SupportRatioTooLarge { floor } => write!(
                 f,
                 "compact support ratio requires a prime-power bound larger than u64: floor={floor}"
             ),
             Self::NonFiniteEvaluation { stage, value } => {
-                write!(f, "non-finite compact Weil pairing value at {stage}: {value}")
+                write!(
+                    f,
+                    "non-finite compact Weil pairing value at {stage}: {value}"
+                )
             }
         }
     }
@@ -324,8 +332,14 @@ where
     let correlation = MixedLogCorrelation::new(left, right, config.correlation_order())?;
     let left_moments = left.boundary_moments(config.boundary_order())?;
     let right_moments = right.boundary_moments(config.boundary_order())?;
-    let left_boundary_residual = left_moments.plus_half.abs().max(left_moments.minus_half.abs());
-    let right_boundary_residual = right_moments.plus_half.abs().max(right_moments.minus_half.abs());
+    let left_boundary_residual = left_moments
+        .plus_half
+        .abs()
+        .max(left_moments.minus_half.abs());
+    let right_boundary_residual = right_moments
+        .plus_half
+        .abs()
+        .max(right_moments.minus_half.abs());
 
     let pole_term = left_moments.minus_half * right_moments.plus_half
         + left_moments.plus_half * right_moments.minus_half;
@@ -463,8 +477,6 @@ mod tests {
         let reverse = audit_compact_weil_pairing(&degree_one, &degree_zero, config).unwrap();
         let symmetric = 0.5 * (forward.value() + reverse.value());
         let expected_mixed = matrix.entry(0, 1).unwrap();
-        assert!(
-            (symmetric - expected_mixed).abs() <= 5.0e-13 * expected_mixed.abs().max(1.0)
-        );
+        assert!((symmetric - expected_mixed).abs() <= 5.0e-13 * expected_mixed.abs().max(1.0));
     }
 }
