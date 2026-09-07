@@ -292,15 +292,23 @@ impl fmt::Display for FiniteWeilDirectSineError {
         match self {
             Self::ZeroMode => write!(f, "direct sine Weil mode must be positive"),
             Self::EmptyParentDimensionSet => {
-                write!(f, "direct sine Q audit requires at least one parent dimension")
+                write!(
+                    f,
+                    "direct sine Q audit requires at least one parent dimension"
+                )
             }
-            Self::ZeroParentDimension => write!(f, "direct sine Q parent dimension must be positive"),
+            Self::ZeroParentDimension => {
+                write!(f, "direct sine Q parent dimension must be positive")
+            }
             Self::ParentDimensionsNotStrictlyIncreasing { previous, next } => write!(
                 f,
                 "direct sine Q parent dimensions must be strictly increasing: previous={previous}, next={next}"
             ),
             Self::ZeroComparisonIntervals => {
-                write!(f, "direct sine Q audit requires at least one comparison interval")
+                write!(
+                    f,
+                    "direct sine Q audit requires at least one comparison interval"
+                )
             }
             Self::SineProjection(error) => write!(f, "sine Legendre projection failed: {error}"),
             Self::Boundary(error) => write!(f, "direct sine Q boundary evaluation failed: {error}"),
@@ -378,11 +386,8 @@ pub fn audit_finite_weil_direct_sine_q(
         let mut max_q_absolute_residual = 0.0_f64;
         let mut max_projected_boundary_residual = 0.0_f64;
 
-        for (mode_index, (&mode, coefficient_vector)) in modes
-            .modes()
-            .iter()
-            .zip(coefficients.iter())
-            .enumerate()
+        for (mode_index, (&mode, coefficient_vector)) in
+            modes.modes().iter().zip(coefficients.iter()).enumerate()
         {
             let direct = direct_functions[mode_index];
 
@@ -445,7 +450,10 @@ pub fn audit_finite_weil_direct_sine_q(
             ("Q absolute residual", max_q_absolute_residual),
             ("normalized Q residual", normalized_q_residual),
             ("direct boundary residual", max_direct_boundary_residual),
-            ("projected boundary residual", max_projected_boundary_residual),
+            (
+                "projected boundary residual",
+                max_projected_boundary_residual,
+            ),
         ] {
             checked_finite(stage, value)?;
         }
@@ -510,10 +518,7 @@ fn shifted_legendre_value(degree: usize, t: f64) -> f64 {
     p_nm1
 }
 
-fn checked_finite(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilDirectSineError> {
+fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilDirectSineError> {
     if value.is_finite() {
         Ok(())
     } else {
