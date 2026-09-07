@@ -35,6 +35,7 @@ pub mod weil_compact_pairing;
 pub mod weil_evidence_grid;
 pub mod weil_finite_functional;
 pub mod weil_generalized_spectrum;
+pub mod weil_h1_continuity;
 pub mod weil_quadratic_matrix;
 pub mod weil_refinement;
 pub mod weil_sine_continuity;
