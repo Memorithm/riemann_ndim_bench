@@ -10,11 +10,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         CompactArchimedeanBump::new(PositiveRational::new(1, 2)?, PositiveRational::new(7, 2)?)?;
     let modes = SineModeSet::new(vec![1, 2, 3])?;
     let parent_dimensions = [4_usize, 6, 8, 10];
-    let config = SineContinuityProbeConfig::new(
-        96,
-        96,
-        CompactWeilPairingConfig::new(64, 64, 96),
-    );
+    let config = SineContinuityProbeConfig::new(96, 96, CompactWeilPairingConfig::new(64, 64, 96));
     let audit = audit_finite_weil_sine_continuity(bump, &modes, &parent_dimensions, config)?;
 
     println!(
