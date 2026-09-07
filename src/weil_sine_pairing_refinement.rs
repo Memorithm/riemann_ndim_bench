@@ -152,18 +152,14 @@ impl SinePairingRefinementSample {
     }
 }
 
-impl From<(SinePairingRefinementLevel, DirectSinePairingSample)>
-    for SinePairingRefinementSample
-{
+impl From<(SinePairingRefinementLevel, DirectSinePairingSample)> for SinePairingRefinementSample {
     fn from((level, sample): (SinePairingRefinementLevel, DirectSinePairingSample)) -> Self {
         Self {
             level,
             max_pairing_amplitude: sample.max_pairing_amplitude(),
-            max_direct_projected_pairing_residual: sample
-                .max_direct_projected_pairing_residual(),
+            max_direct_projected_pairing_residual: sample.max_direct_projected_pairing_residual(),
             max_normalized_pairing_residual: sample.max_normalized_pairing_residual(),
-            max_parent_matrix_projection_residual: sample
-                .max_parent_matrix_projection_residual(),
+            max_parent_matrix_projection_residual: sample.max_parent_matrix_projection_residual(),
             max_pole_term_residual: sample.max_pole_term_residual(),
             max_archimedean_term_residual: sample.max_archimedean_term_residual(),
             max_prime_total_residual: sample.max_prime_total_residual(),
@@ -322,7 +318,10 @@ impl fmt::Display for FiniteWeilSinePairingRefinementError {
                 "finite sine pairing refinement grid requires at least one quadrature level"
             ),
             Self::DirectPairing(error) => {
-                write!(f, "finite sine pairing refinement evaluation failed: {error}")
+                write!(
+                    f,
+                    "finite sine pairing refinement evaluation failed: {error}"
+                )
             }
         }
     }
