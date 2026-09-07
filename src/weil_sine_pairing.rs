@@ -190,10 +190,15 @@ impl fmt::Display for FiniteWeilDirectSinePairingError {
             Self::DirectSine(error) => write!(f, "direct sine construction failed: {error}"),
             Self::SineProjection(error) => write!(f, "sine projection failed: {error}"),
             Self::Pairing(error) => write!(f, "compact Weil pairing failed: {error}"),
-            Self::ParentMatrix(error) => write!(f, "parent Legendre pairing matrix failed: {error}"),
+            Self::ParentMatrix(error) => {
+                write!(f, "parent Legendre pairing matrix failed: {error}")
+            }
             Self::Boundary(error) => write!(f, "projected boundary evaluation failed: {error}"),
             Self::NonFiniteEvaluation { stage, value } => {
-                write!(f, "non-finite direct sine pairing diagnostic at {stage}: {value}")
+                write!(
+                    f,
+                    "non-finite direct sine pairing diagnostic at {stage}: {value}"
+                )
             }
         }
     }
@@ -288,8 +293,7 @@ impl SymmetricPairingTerms {
             Self {
                 value: 0.5 * (forward.value() + reverse.value()),
                 pole_term: 0.5 * (forward.pole_term() + reverse.pole_term()),
-                archimedean_term: 0.5
-                    * (forward.archimedean_term() + reverse.archimedean_term()),
+                archimedean_term: 0.5 * (forward.archimedean_term() + reverse.archimedean_term()),
                 prime_total: 0.5 * (forward.prime_total() + reverse.prime_total()),
                 max_boundary_residual: max_boundary_residual
                     .max(reverse.left_boundary_residual())
@@ -421,8 +425,7 @@ pub fn audit_finite_weil_direct_sine_pairing(
                     .max((direct.archimedean_term - projected.archimedean_term).abs());
                 max_prime_total_residual = max_prime_total_residual
                     .max((direct.prime_total - projected.prime_total).abs());
-                max_direct_pairing_asymmetry =
-                    max_direct_pairing_asymmetry.max(direct.asymmetry);
+                max_direct_pairing_asymmetry = max_direct_pairing_asymmetry.max(direct.asymmetry);
                 max_projected_pairing_asymmetry =
                     max_projected_pairing_asymmetry.max(projected.asymmetry);
                 max_direct_boundary_residual =
@@ -438,7 +441,10 @@ pub fn audit_finite_weil_direct_sine_pairing(
                 "direct/projected pairing residual",
                 max_direct_projected_pairing_residual,
             ),
-            ("normalized pairing residual", max_normalized_pairing_residual),
+            (
+                "normalized pairing residual",
+                max_normalized_pairing_residual,
+            ),
             (
                 "parent matrix projection residual",
                 max_parent_matrix_projection_residual,
@@ -452,7 +458,10 @@ pub fn audit_finite_weil_direct_sine_pairing(
                 max_projected_pairing_asymmetry,
             ),
             ("direct boundary residual", max_direct_boundary_residual),
-            ("projected boundary residual", max_projected_boundary_residual),
+            (
+                "projected boundary residual",
+                max_projected_boundary_residual,
+            ),
         ] {
             checked_finite(stage, value)?;
         }
@@ -524,10 +533,7 @@ fn validate_parent_dimensions(
     Ok(())
 }
 
-fn checked_finite(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilDirectSinePairingError> {
+fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilDirectSinePairingError> {
     if value.is_finite() {
         Ok(())
     } else {
@@ -551,12 +557,9 @@ mod tests {
     #[test]
     fn direct_sine_pairing_audit_records_finite_cross_route_diagnostics() {
         let modes = SineModeSet::new(vec![1, 2]).unwrap();
-        let config = DirectSinePairingAuditConfig::new(
-            48,
-            CompactWeilPairingConfig::new(20, 20, 28),
-        );
-        let audit =
-            audit_finite_weil_direct_sine_pairing(bump(), &modes, &[3, 5], config).unwrap();
+        let config =
+            DirectSinePairingAuditConfig::new(48, CompactWeilPairingConfig::new(20, 20, 28));
+        let audit = audit_finite_weil_direct_sine_pairing(bump(), &modes, &[3, 5], config).unwrap();
 
         assert_eq!(audit.modes(), &modes);
         assert_eq!(audit.parent_dimensions(), &[3, 5]);
