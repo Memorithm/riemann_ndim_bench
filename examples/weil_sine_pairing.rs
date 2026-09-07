@@ -1,6 +1,4 @@
-use riemann_ndim_bench::semilocal_compact_archimedean::{
-    CompactArchimedeanBump, PositiveRational,
-};
+use riemann_ndim_bench::semilocal_compact_archimedean::{CompactArchimedeanBump, PositiveRational};
 use riemann_ndim_bench::weil_compact_pairing::CompactWeilPairingConfig;
 use riemann_ndim_bench::weil_sine_pairing::{
     DirectSinePairingAuditConfig, audit_finite_weil_direct_sine_pairing,
@@ -12,12 +10,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         CompactArchimedeanBump::new(PositiveRational::new(1, 2)?, PositiveRational::new(7, 2)?)?;
     let modes = SineModeSet::new(vec![1, 2, 3])?;
     let parent_dimensions = [4_usize, 6, 8, 10];
-    let config = DirectSinePairingAuditConfig::new(
-        96,
-        CompactWeilPairingConfig::new(64, 64, 96),
-    );
-    let audit =
-        audit_finite_weil_direct_sine_pairing(bump, &modes, &parent_dimensions, config)?;
+    let config = DirectSinePairingAuditConfig::new(96, CompactWeilPairingConfig::new(64, 64, 96));
+    let audit = audit_finite_weil_direct_sine_pairing(bump, &modes, &parent_dimensions, config)?;
 
     println!(
         "parent_dimension,pairing_amplitude,direct_projected_residual,normalized_residual,parent_matrix_projection_residual,pole_residual,archimedean_residual,prime_residual,direct_asymmetry,projected_asymmetry,direct_boundary,projected_boundary"
