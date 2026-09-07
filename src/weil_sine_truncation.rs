@@ -337,6 +337,7 @@ pub fn sine_legendre_coefficients(
 
 /// Re-evaluate the same sine-enriched finite subspace through increasing
 /// Legendre parent dimensions while holding the Weil quadratures fixed.
+#[allow(clippy::too_many_arguments)]
 pub fn audit_finite_weil_sine_truncation(
     bump: CompactArchimedeanBump,
     modes: &SineModeSet,
