@@ -26,6 +26,7 @@ use crate::weil_coefficient_subspace::{
 use crate::weil_generalized_spectrum::{
     FiniteWeilGeneralizedSpectrumError, audit_finite_weil_generalized_spectrum,
 };
+use crate::weil_refinement::WeilQuadratureLevel;
 
 const RECONSTRUCTION_INTERVALS: usize = 256;
 
@@ -149,6 +150,7 @@ pub struct FiniteWeilSineTruncationAudit {
     modes: SineModeSet,
     parent_dimensions: Vec<usize>,
     coefficient_quadrature_order: usize,
+    weil_level: WeilQuadratureLevel,
     samples: Vec<SineTruncationSample>,
     generalized_observed_minimum: f64,
     generalized_observed_maximum: f64,
@@ -170,6 +172,11 @@ impl FiniteWeilSineTruncationAudit {
     #[inline]
     pub const fn coefficient_quadrature_order(&self) -> usize {
         self.coefficient_quadrature_order
+    }
+
+    #[inline]
+    pub const fn weil_level(&self) -> WeilQuadratureLevel {
+        self.weil_level
     }
 
     #[inline]
@@ -336,17 +343,13 @@ pub fn sine_legendre_coefficients(
 }
 
 /// Re-evaluate the same sine-enriched finite subspace through increasing
-/// Legendre parent dimensions while holding the Weil quadratures fixed.
-#[allow(clippy::too_many_arguments)]
+/// Legendre parent dimensions while holding the declared Weil quadrature level fixed.
 pub fn audit_finite_weil_sine_truncation(
     bump: CompactArchimedeanBump,
     modes: &SineModeSet,
     parent_dimensions: &[usize],
     coefficient_quadrature_order: usize,
-    correlation_order: usize,
-    archimedean_order: usize,
-    boundary_order: usize,
-    gram_order: usize,
+    weil_level: WeilQuadratureLevel,
 ) -> Result<FiniteWeilSineTruncationAudit, FiniteWeilSineTruncationError> {
     validate_parent_dimensions(parent_dimensions, modes.dimension())?;
 
@@ -355,10 +358,10 @@ pub fn audit_finite_weil_sine_truncation(
         let parent = audit_finite_weil_generalized_spectrum(
             bump,
             parent_dimension,
-            correlation_order,
-            archimedean_order,
-            boundary_order,
-            gram_order,
+            weil_level.correlation_order(),
+            weil_level.archimedean_order(),
+            weil_level.boundary_order(),
+            weil_level.gram_order(),
         )?;
 
         let coefficients = modes
@@ -383,8 +386,12 @@ pub fn audit_finite_weil_sine_truncation(
             max_coefficient_l1_norm = max_coefficient_l1_norm.max(l1);
         }
 
-        let subspace =
-            audit_finite_weil_coefficient_subspace(bump, &parent, &coefficients, boundary_order)?;
+        let subspace = audit_finite_weil_coefficient_subspace(
+            bump,
+            &parent,
+            &coefficients,
+            weil_level.boundary_order(),
+        )?;
         let generalized_minimum_eigenvalue = subspace.minimum_generalized_eigenvalue();
         let leading_legendre_generalized_minimum_eigenvalue =
             subspace.leading_legendre_generalized_minimum();
@@ -429,6 +436,7 @@ pub fn audit_finite_weil_sine_truncation(
         modes: modes.clone(),
         parent_dimensions: parent_dimensions.to_vec(),
         coefficient_quadrature_order,
+        weil_level,
         samples,
         generalized_observed_minimum,
         generalized_observed_maximum,
@@ -544,11 +552,13 @@ mod tests {
     #[test]
     fn truncation_sweep_records_finite_diagnostics_without_sign_assumption() {
         let modes = SineModeSet::new(vec![1, 2]).unwrap();
+        let level = WeilQuadratureLevel::new(20, 20, 28, 28);
         let audit =
-            audit_finite_weil_sine_truncation(bump(), &modes, &[3, 5], 48, 20, 20, 28, 28).unwrap();
+            audit_finite_weil_sine_truncation(bump(), &modes, &[3, 5], 48, level).unwrap();
 
         assert_eq!(audit.modes(), &modes);
         assert_eq!(audit.parent_dimensions(), &[3, 5]);
+        assert_eq!(audit.weil_level(), level);
         assert_eq!(audit.samples().len(), 2);
         assert!(audit.generalized_observed_span().is_finite());
         assert!(audit.generalized_observed_span() >= 0.0);
