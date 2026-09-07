@@ -39,6 +39,7 @@ pub mod weil_quadratic_matrix;
 pub mod weil_refinement;
 pub mod weil_sine_direct_q;
 pub mod weil_sine_pairing;
+pub mod weil_sine_pairing_refinement;
 pub mod weil_sine_truncation;
 pub mod weil_subspace;
 pub mod weil_support;
