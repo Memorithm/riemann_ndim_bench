@@ -2,11 +2,11 @@
 //!
 //! For each sine mode, the direct route evaluates `Q(bump sin(m*pi*t))`
 //! analytically and sends that compact function through the generic mixed Weil
-//! evaluator.  The projected route uses the finite shifted-Legendre expansion
-//! from `weil_sine_truncation`.  Its total pairing is also checked against the
+//! evaluator. The projected route uses the finite shifted-Legendre expansion
+//! from `weil_sine_truncation`. Its total pairing is also checked against the
 //! existing parent Legendre matrix through `C^T A C`.
 //!
-//! Agreement is finite numerical evidence about these two implementations.  It
+//! Agreement is finite numerical evidence about these two implementations. It
 //! is not a density theorem, complete-space Weil positivity, Conjecture 4.1, or
 //! a proof of RH.
 
@@ -77,57 +77,46 @@ impl DirectSinePairingSample {
     pub const fn parent_dimension(self) -> usize {
         self.parent_dimension
     }
-
     #[inline]
     pub const fn max_pairing_amplitude(self) -> f64 {
         self.max_pairing_amplitude
     }
-
     #[inline]
     pub const fn max_direct_projected_pairing_residual(self) -> f64 {
         self.max_direct_projected_pairing_residual
     }
-
     #[inline]
     pub const fn max_normalized_pairing_residual(self) -> f64 {
         self.max_normalized_pairing_residual
     }
-
     #[inline]
     pub const fn max_parent_matrix_projection_residual(self) -> f64 {
         self.max_parent_matrix_projection_residual
     }
-
     #[inline]
     pub const fn max_pole_term_residual(self) -> f64 {
         self.max_pole_term_residual
     }
-
     #[inline]
     pub const fn max_archimedean_term_residual(self) -> f64 {
         self.max_archimedean_term_residual
     }
-
     #[inline]
     pub const fn max_prime_total_residual(self) -> f64 {
         self.max_prime_total_residual
     }
-
     #[inline]
     pub const fn max_direct_pairing_asymmetry(self) -> f64 {
         self.max_direct_pairing_asymmetry
     }
-
     #[inline]
     pub const fn max_projected_pairing_asymmetry(self) -> f64 {
         self.max_projected_pairing_asymmetry
     }
-
     #[inline]
     pub const fn max_direct_boundary_residual(self) -> f64 {
         self.max_direct_boundary_residual
     }
-
     #[inline]
     pub const fn max_projected_boundary_residual(self) -> f64 {
         self.max_projected_boundary_residual
@@ -147,17 +136,14 @@ impl FiniteWeilDirectSinePairingAudit {
     pub fn modes(&self) -> &SineModeSet {
         &self.modes
     }
-
     #[inline]
     pub fn parent_dimensions(&self) -> &[usize] {
         &self.parent_dimensions
     }
-
     #[inline]
     pub const fn config(&self) -> DirectSinePairingAuditConfig {
         self.config
     }
-
     #[inline]
     pub fn samples(&self) -> &[DirectSinePairingSample] {
         &self.samples
@@ -220,25 +206,21 @@ impl From<FiniteWeilDirectSineError> for FiniteWeilDirectSinePairingError {
         Self::DirectSine(value)
     }
 }
-
 impl From<FiniteWeilSineTruncationError> for FiniteWeilDirectSinePairingError {
     fn from(value: FiniteWeilSineTruncationError) -> Self {
         Self::SineProjection(value)
     }
 }
-
 impl From<CompactWeilPairingError> for FiniteWeilDirectSinePairingError {
     fn from(value: CompactWeilPairingError) -> Self {
         Self::Pairing(value)
     }
 }
-
 impl From<FiniteWeilMatrixError> for FiniteWeilDirectSinePairingError {
     fn from(value: FiniteWeilMatrixError) -> Self {
         Self::ParentMatrix(value)
     }
 }
-
 impl From<WeilBoundaryError> for FiniteWeilDirectSinePairingError {
     fn from(value: WeilBoundaryError) -> Self {
         Self::Boundary(value)
@@ -281,6 +263,49 @@ impl CompactWeilEvaluand for ProjectedLegendreWeilFunction {
             plus_half,
             minus_half,
         })
+    }
+}
+
+#[derive(Clone, Copy)]
+struct SymmetricPairingTerms {
+    value: f64,
+    pole_term: f64,
+    archimedean_term: f64,
+    prime_total: f64,
+    max_boundary_residual: f64,
+    asymmetry: f64,
+}
+
+impl SymmetricPairingTerms {
+    fn from_forward_reverse(
+        forward: FiniteCompactWeilPairingAudit,
+        reverse: Option<FiniteCompactWeilPairingAudit>,
+    ) -> Self {
+        let max_boundary_residual = forward
+            .left_boundary_residual()
+            .max(forward.right_boundary_residual());
+        if let Some(reverse) = reverse {
+            Self {
+                value: 0.5 * (forward.value() + reverse.value()),
+                pole_term: 0.5 * (forward.pole_term() + reverse.pole_term()),
+                archimedean_term: 0.5
+                    * (forward.archimedean_term() + reverse.archimedean_term()),
+                prime_total: 0.5 * (forward.prime_total() + reverse.prime_total()),
+                max_boundary_residual: max_boundary_residual
+                    .max(reverse.left_boundary_residual())
+                    .max(reverse.right_boundary_residual()),
+                asymmetry: (forward.value() - reverse.value()).abs(),
+            }
+        } else {
+            Self {
+                value: forward.value(),
+                pole_term: forward.pole_term(),
+                archimedean_term: forward.archimedean_term(),
+                prime_total: forward.prime_total(),
+                max_boundary_residual,
+                asymmetry: 0.0,
+            }
+        }
     }
 }
 
@@ -349,44 +374,35 @@ pub fn audit_finite_weil_direct_sine_pairing(
                     &projected_functions[j],
                     pairing_config,
                 )?;
-
-                let (direct_value, direct_terms, direct_asymmetry) = if i == j {
-                    (direct_forward.value(), direct_forward, 0.0)
+                let direct_reverse = if i == j {
+                    None
                 } else {
-                    let reverse = audit_compact_weil_pairing(
+                    Some(audit_compact_weil_pairing(
                         &direct_functions[j],
                         &direct_functions[i],
                         pairing_config,
-                    )?;
-                    (
-                        0.5 * (direct_forward.value() + reverse.value()),
-                        average_pairing_terms(direct_forward, reverse),
-                        (direct_forward.value() - reverse.value()).abs(),
-                    )
+                    )?)
                 };
-
-                let (projected_value, projected_terms, projected_asymmetry) = if i == j {
-                    (projected_forward.value(), projected_forward, 0.0)
+                let projected_reverse = if i == j {
+                    None
                 } else {
-                    let reverse = audit_compact_weil_pairing(
+                    Some(audit_compact_weil_pairing(
                         &projected_functions[j],
                         &projected_functions[i],
                         pairing_config,
-                    )?;
-                    (
-                        0.5 * (projected_forward.value() + reverse.value()),
-                        average_pairing_terms(projected_forward, reverse),
-                        (projected_forward.value() - reverse.value()).abs(),
-                    )
+                    )?)
                 };
 
-                let matrix_projected = projected_matrix_entry(
-                    &parent_matrix,
-                    &coefficients[i],
-                    &coefficients[j],
+                let direct =
+                    SymmetricPairingTerms::from_forward_reverse(direct_forward, direct_reverse);
+                let projected = SymmetricPairingTerms::from_forward_reverse(
+                    projected_forward,
+                    projected_reverse,
                 );
-                let pairing_residual = (direct_value - projected_value).abs();
-                let amplitude = direct_value.abs().max(projected_value.abs());
+                let matrix_projected =
+                    projected_matrix_entry(&parent_matrix, &coefficients[i], &coefficients[j]);
+                let pairing_residual = (direct.value - projected.value).abs();
+                let amplitude = direct.value.abs().max(projected.value.abs());
                 let normalized = if amplitude > 0.0 {
                     pairing_residual / amplitude
                 } else {
@@ -398,37 +414,43 @@ pub fn audit_finite_weil_direct_sine_pairing(
                     max_direct_projected_pairing_residual.max(pairing_residual);
                 max_normalized_pairing_residual = max_normalized_pairing_residual.max(normalized);
                 max_parent_matrix_projection_residual = max_parent_matrix_projection_residual
-                    .max((projected_value - matrix_projected).abs());
-                max_pole_term_residual = max_pole_term_residual
-                    .max((direct_terms.pole_term() - projected_terms.pole_term()).abs());
-                max_archimedean_term_residual = max_archimedean_term_residual.max(
-                    (direct_terms.archimedean_term() - projected_terms.archimedean_term()).abs(),
-                );
+                    .max((projected.value - matrix_projected).abs());
+                max_pole_term_residual =
+                    max_pole_term_residual.max((direct.pole_term - projected.pole_term).abs());
+                max_archimedean_term_residual = max_archimedean_term_residual
+                    .max((direct.archimedean_term - projected.archimedean_term).abs());
                 max_prime_total_residual = max_prime_total_residual
-                    .max((direct_terms.prime_total() - projected_terms.prime_total()).abs());
+                    .max((direct.prime_total - projected.prime_total).abs());
                 max_direct_pairing_asymmetry =
-                    max_direct_pairing_asymmetry.max(direct_asymmetry);
+                    max_direct_pairing_asymmetry.max(direct.asymmetry);
                 max_projected_pairing_asymmetry =
-                    max_projected_pairing_asymmetry.max(projected_asymmetry);
-                max_direct_boundary_residual = max_direct_boundary_residual
-                    .max(direct_terms.left_boundary_residual())
-                    .max(direct_terms.right_boundary_residual());
-                max_projected_boundary_residual = max_projected_boundary_residual
-                    .max(projected_terms.left_boundary_residual())
-                    .max(projected_terms.right_boundary_residual());
+                    max_projected_pairing_asymmetry.max(projected.asymmetry);
+                max_direct_boundary_residual =
+                    max_direct_boundary_residual.max(direct.max_boundary_residual);
+                max_projected_boundary_residual =
+                    max_projected_boundary_residual.max(projected.max_boundary_residual);
             }
         }
 
         for (stage, value) in [
             ("pairing amplitude", max_pairing_amplitude),
-            ("direct/projected pairing residual", max_direct_projected_pairing_residual),
+            (
+                "direct/projected pairing residual",
+                max_direct_projected_pairing_residual,
+            ),
             ("normalized pairing residual", max_normalized_pairing_residual),
-            ("parent matrix projection residual", max_parent_matrix_projection_residual),
+            (
+                "parent matrix projection residual",
+                max_parent_matrix_projection_residual,
+            ),
             ("pole term residual", max_pole_term_residual),
             ("archimedean term residual", max_archimedean_term_residual),
             ("prime total residual", max_prime_total_residual),
             ("direct pairing asymmetry", max_direct_pairing_asymmetry),
-            ("projected pairing asymmetry", max_projected_pairing_asymmetry),
+            (
+                "projected pairing asymmetry",
+                max_projected_pairing_asymmetry,
+            ),
             ("direct boundary residual", max_direct_boundary_residual),
             ("projected boundary residual", max_projected_boundary_residual),
         ] {
@@ -459,13 +481,6 @@ pub fn audit_finite_weil_direct_sine_pairing(
     })
 }
 
-fn average_pairing_terms(
-    left: FiniteCompactWeilPairingAudit,
-    right: FiniteCompactWeilPairingAudit,
-) -> FiniteCompactWeilPairingAudit {
-    FiniteCompactWeilPairingAudit::from_symmetric_average(left, right)
-}
-
 fn projected_matrix_entry(
     matrix: &FiniteWeilQuadraticMatrixAudit,
     left: &[f64],
@@ -475,13 +490,13 @@ fn projected_matrix_entry(
     debug_assert_eq!(left.len(), dimension);
     debug_assert_eq!(right.len(), dimension);
     let mut total = 0.0_f64;
-    for i in 0..dimension {
-        for j in 0..dimension {
-            total += left[i]
+    for (i, &left_coefficient) in left.iter().enumerate() {
+        for (j, &right_coefficient) in right.iter().enumerate() {
+            total += left_coefficient
                 * matrix
                     .entry(i, j)
                     .expect("coefficient indices lie inside parent pairing matrix")
-                * right[j];
+                * right_coefficient;
         }
     }
     total
