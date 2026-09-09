@@ -1,15 +1,11 @@
-use riemann_ndim_bench::semilocal_compact_archimedean::{
-    CompactArchimedeanBump, PositiveRational,
-};
+use riemann_ndim_bench::semilocal_compact_archimedean::{CompactArchimedeanBump, PositiveRational};
 use riemann_ndim_bench::weil_sine_taylor_h1::{
     bound_sine_taylor_pairing_perturbation, derive_sine_taylor_h1_envelope,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let bump = CompactArchimedeanBump::new(
-        PositiveRational::new(1, 2)?,
-        PositiveRational::new(7, 2)?,
-    )?;
+    let bump =
+        CompactArchimedeanBump::new(PositiveRational::new(1, 2)?, PositiveRational::new(7, 2)?)?;
 
     println!(
         "mode,degree,error_l2_bound,derivative_error_l2_bound,target_l2_bound,target_derivative_l2_bound"
