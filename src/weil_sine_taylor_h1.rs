@@ -354,8 +354,8 @@ pub fn bound_sine_taylor_pairing_perturbation(
 /// Put `x=1/(t(1-t)) >= 4`.  Every derivative is `exp(-x)` times a polynomial
 /// in `x` and `1-2t`.  Replacing `|1-2t|` by one and maximizing each monomial
 /// `x^k exp(-x)` on `x>=4` gives the closed bounds below.
-pub fn standard_bump_derivative_envelope(
-) -> Result<StandardBumpDerivativeEnvelope, FiniteSineTaylorH1Error> {
+pub fn standard_bump_derivative_envelope()
+-> Result<StandardBumpDerivativeEnvelope, FiniteSineTaylorH1Error> {
     let m0 = x_power_exp_sup(0)?;
     let m2 = x_power_exp_sup(2)?;
     let m3 = x_power_exp_sup(3)?;
@@ -482,10 +482,7 @@ fn checked_positive(stage: &'static str, value: f64) -> Result<(), FiniteSineTay
     }
 }
 
-fn checked_nonnegative(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteSineTaylorH1Error> {
+fn checked_nonnegative(stage: &'static str, value: f64) -> Result<(), FiniteSineTaylorH1Error> {
     if value.is_finite() && value >= 0.0 {
         Ok(())
     } else {
@@ -528,10 +525,7 @@ mod tests {
             );
         }
         assert!(high.h1_bounds().error_l2() < low.h1_bounds().error_l2());
-        assert!(
-            high.h1_bounds().derivative_error_l2()
-                < low.h1_bounds().derivative_error_l2()
-        );
+        assert!(high.h1_bounds().derivative_error_l2() < low.h1_bounds().derivative_error_l2());
     }
 
     #[test]
@@ -550,8 +544,7 @@ mod tests {
         let low = bound_sine_taylor_pairing_perturbation(bump(), 1, 6, 2, 8).unwrap();
         let high = bound_sine_taylor_pairing_perturbation(bump(), 1, 10, 2, 12).unwrap();
         assert!(
-            high.pairing().total_pairing_error_bound()
-                < low.pairing().total_pairing_error_bound()
+            high.pairing().total_pairing_error_bound() < low.pairing().total_pairing_error_bound()
         );
         assert!(high.pairing().total_pairing_error_bound().is_finite());
     }
