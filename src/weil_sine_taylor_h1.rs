@@ -388,8 +388,8 @@ fn sine_taylor_remainder_envelope(
     degree: usize,
 ) -> Result<SineTaylorRemainderEnvelope, FiniteSineTaylorH1Error> {
     let mut derivative_bounds = [0.0_f64; 4];
-    for derivative_order in 0..=3 {
-        derivative_bounds[derivative_order] =
+    for (derivative_order, derivative_bound) in derivative_bounds.iter_mut().enumerate() {
+        *derivative_bound =
             sine_taylor_remainder_derivative_bound(omega, degree, derivative_order)?;
     }
     Ok(SineTaylorRemainderEnvelope { derivative_bounds })
@@ -518,11 +518,13 @@ mod tests {
     fn centered_taylor_remainders_contract_with_degree_for_first_mode() {
         let low = derive_sine_taylor_h1_envelope(bump(), 1, 6).unwrap();
         let high = derive_sine_taylor_h1_envelope(bump(), 1, 10).unwrap();
-        for derivative_order in 0..=3 {
-            assert!(
-                high.remainder().derivative_bounds()[derivative_order]
-                    < low.remainder().derivative_bounds()[derivative_order]
-            );
+        for (high_bound, low_bound) in high
+            .remainder()
+            .derivative_bounds()
+            .into_iter()
+            .zip(low.remainder().derivative_bounds())
+        {
+            assert!(high_bound < low_bound);
         }
         assert!(high.h1_bounds().error_l2() < low.h1_bounds().error_l2());
         assert!(high.h1_bounds().derivative_error_l2() < low.h1_bounds().derivative_error_l2());
