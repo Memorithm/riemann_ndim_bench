@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import sys
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from proof_ledger import EvidenceAuthority, EvidenceStatus, ProofLedger
+import riemann_research_agent as agent
 
 
 class ProofLedgerTests(unittest.TestCase):
@@ -306,6 +309,39 @@ class ProofLedgerTests(unittest.TestCase):
         self.assertNotEqual(first.proposition_sha256, second.proposition_sha256)
         self.assertFalse(ledger.has_exact_success("gamma_quotient"))
 
+    def test_locked_gate_target_rejects_unrelated_later_success(self) -> None:
+        ledger = ProofLedger(source_sha="b" * 40)
+        target = self.add_bound(
+            ledger,
+            "gamma_quotient",
+            "exit_status=0\nmode=gamma_quotient\nexact_status=REFUTED_TARGET",
+            proposition="target quotient",
+            arguments={
+                "mode": "gamma_quotient",
+                "numerator": "3/2",
+                "gate_target": True,
+            },
+            execution_id="execution-target",
+        )
+        unrelated = self.add_bound(
+            ledger,
+            "gamma_quotient",
+            "exit_status=0\nmode=gamma_quotient\nexact_status=PROVED_BY_GAMMA_RECURRENCE_AND_SPECIAL_IDENTITIES",
+            proposition="unrelated trivial quotient",
+            arguments={
+                "mode": "gamma_quotient",
+                "numerator": "1",
+                "gate_target": True,
+            },
+            execution_id="execution-unrelated",
+        )
+        self.assertEqual(target.status, EvidenceStatus.REFUTED)
+        self.assertEqual(unrelated.status, EvidenceStatus.UNKNOWN)
+        self.assertTrue(
+            any("gate target identity is already locked" in error for error in unrelated.validation_errors)
+        )
+        self.assertFalse(ledger.has_exact_success("gamma_quotient"))
+
     def test_record_binds_all_evidence_identities_and_not_prooflab(self) -> None:
         ledger = ProofLedger(source_sha="b" * 40)
         record = self.add_bound(
@@ -324,6 +360,41 @@ class ProofLedgerTests(unittest.TestCase):
         summary = ledger.public_summary()
         self.assertIn("authority=script_verified_exact", summary)
         self.assertIn("prooflab=not_submitted", summary)
+
+    def test_execution_identity_includes_fresh_run_nonce(self) -> None:
+        call = {"id": "same", "function": {"name": "verify_math"}}
+        transcript = Path("agent_runs/test.jsonl")
+        first = agent.execution_identity(
+            transcript, 1, 1, call, run_nonce="nonce-a"
+        )
+        second = agent.execution_identity(
+            transcript, 1, 1, call, run_nonce="nonce-b"
+        )
+        self.assertNotEqual(first, second)
+
+    def test_resume_without_source_sha_fails_closed(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        records = [
+            {
+                "event": "start",
+                "root": str(root),
+                "model": "test-model",
+                "task": "test task",
+            },
+            {"event": "assistant", "turn": 1, "content": "draft"},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "legacy.jsonl"
+            path.write_text(
+                "".join(json.dumps(record) + "\n" for record in records),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RuntimeError, "no source SHA binding"):
+                agent.load_resume_transcript(
+                    path,
+                    expected_root=root,
+                    expected_model="test-model",
+                )
 
 
 if __name__ == "__main__":
