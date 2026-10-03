@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import secrets
 from pathlib import Path
 
 import riemann_research_agent as base
@@ -48,7 +49,9 @@ experiment. Preserve unresolved gaps. The deterministic evidence ledger is
 binding: numerical/asymptotic evidence cannot be promoted to symbolic proof.
 For the blind mu^2 task, the final phase must independently execute the required
 verifier modes and pass the exact index-transform, Gamma and perturbative gates
-before its report can be accepted.
+before its report can be accepted. Exploratory checks do not satisfy the final
+gate: the final phase must call every required mode with gate_target=true, which
+locks that mode to the first final proposition and input identity.
 """.strip()
 
 
@@ -97,6 +100,7 @@ def run_phase(
     ]
     source_sha = base.workspace_source_sha(root)
     ledger = ProofLedger(source_sha=source_sha)
+    run_nonce = secrets.token_hex(16)
     final_audit_sent = False
     turn_limit = max_tool_turns + 5 if enforce_final_gate else max_tool_turns
 
@@ -112,6 +116,7 @@ def run_phase(
             "model": model,
             "assignment": assignment,
             "source_sha": source_sha,
+            "run_nonce": run_nonce,
             "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(),
         },
     )
@@ -224,6 +229,7 @@ def run_phase(
                 call_index,
                 call,
                 namespace=phase,
+                run_nonce=run_nonce,
             )
             mode = arguments.get("mode", "") if isinstance(arguments, dict) else ""
             verifier_id, verifier_sha256 = (
@@ -325,6 +331,8 @@ def collaborative_run(
     transcript: Path,
     challenge_path: str,
 ) -> str:
+    if transcript.exists():
+        raise RuntimeError(f"refusing to append a fresh run to existing transcript: {transcript}")
     challenge = read_challenge(root, challenge_path)
     researcher_reports: list[str] = []
     critic_reports: list[str] = []

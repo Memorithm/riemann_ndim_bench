@@ -106,9 +106,10 @@ success verdicts.
 
 Each call also supplies a canonical `proposition`. The ledger binds its digest
 to the exact input digest, verifier digest, Git source SHA, execution identity,
-zero exit code and validated output schema. A later result for a mode supersedes
-an older result for gating, preventing a success for one candidate from
-satisfying a later candidate. See
+zero exit code and validated output schema. Final verifier calls set
+`gate_target=true`; the first final proposition/input identity for each mode is
+locked, preventing a later success for another candidate from satisfying the
+gate. See
 [`EVIDENCE_IDENTITY_CONTRACT.md`](EVIDENCE_IDENTITY_CONTRACT.md) for the full
 contract and the distinction between script-verified exact evidence and formal
 ProofLab acceptance.

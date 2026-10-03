@@ -14,8 +14,9 @@ verifier invocation is bound to all of the following identities:
 
 Missing, malformed, non-zero, unbound, or mode-mismatched output is classified
 `unknown` with authority `invalid_or_unbound` and cannot satisfy a gate. Gates
-consider the latest record for each mode, so a historical success for a
-different proposition cannot override a later refutation or invalid execution.
+evaluate only a proposition/input pair explicitly submitted with
+`gate_target=true`. The first such identity for a mode is locked. Later output
+for an unrelated proposition cannot replace it, even if that output succeeds.
 
 ## Evidence authority
 
@@ -37,4 +38,7 @@ Every `verify_math` tool call must include a self-contained `proposition`
 string. The runner hashes that statement and the exact arguments independently;
 it also computes verifier and source digests rather than trusting stdout. New
 transcripts persist the resulting execution and verifier identities so resumed
-runs reconstruct the same fail-closed ledger.
+runs reconstruct the same fail-closed ledger. A fresh run receives a random
+nonce that participates in every execution ID, and the runner refuses to append
+a fresh run to an existing transcript. Legacy transcripts without their own
+source SHA are rejected rather than rebound to the current checkout.

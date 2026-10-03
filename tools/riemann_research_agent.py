@@ -13,6 +13,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import secrets
 import subprocess
 import sys
 import time
@@ -60,6 +61,7 @@ def execution_identity(
     call: dict,
     *,
     namespace: str = "single",
+    run_nonce: str,
 ) -> str:
     payload = {
         "transcript": str(transcript.resolve()),
@@ -67,6 +69,7 @@ def execution_identity(
         "call_index": call_index,
         "tool_call_id": call.get("id", ""),
         "namespace": namespace,
+        "run_nonce": run_nonce,
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
@@ -310,6 +313,13 @@ VERIFY_PROPERTIES = {
             "this exact verifier invocation."
         ),
     },
+    "gate_target": {
+        "type": "boolean",
+        "description": (
+            "Set true only for the final evidence identity that this mode's "
+            "deterministic gate must lock and evaluate."
+        ),
+    },
 }
 
 
@@ -417,6 +427,10 @@ Rules:
     The evidence ledger binds that proposition, the exact arguments, verifier
     digest, source SHA, execution ID, exit code and output schema. Script-verified
     exact evidence is not a formal ProofLab acceptance.
+13. Exploratory calls must omit gate_target or set it false. Before a final
+    synthesis, execute each required verifier mode once with gate_target=true.
+    The first such proposition/input identity is locked and cannot be replaced
+    by a later success for an unrelated claim.
 """.strip()
 
 
@@ -498,7 +512,9 @@ def load_resume_transcript(path: Path, *, expected_root: Path, expected_model: s
         fail("resume transcript model mismatch")
     expected_source_sha = workspace_source_sha(expected_root)
     recorded_source_sha = start.get("source_sha")
-    if recorded_source_sha and recorded_source_sha != expected_source_sha:
+    if not recorded_source_sha:
+        fail("legacy resume transcript has no source SHA binding")
+    if recorded_source_sha != expected_source_sha:
         fail("resume transcript source SHA mismatch")
     task = start.get("task", "")
     if not isinstance(task, str) or not task.strip():
@@ -587,6 +603,7 @@ def run_agent(
             expected_model=model,
         )
         prepare_resume_transcript(resume_from, transcript)
+        run_nonce = secrets.token_hex(16)
         append_jsonl(
             transcript,
             {
@@ -595,11 +612,15 @@ def run_agent(
                 "root": str(root),
                 "completed_turns": completed_turns,
                 "resumed_from": str(resume_from.resolve()),
+                "run_nonce": run_nonce,
                 "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(),
             },
         )
     else:
         completed_turns = 0
+        if transcript.exists():
+            fail(f"refusing to append a fresh run to existing transcript: {transcript}")
+        run_nonce = secrets.token_hex(16)
         source_sha = workspace_source_sha(root)
         ledger = ProofLedger(source_sha=source_sha)
         messages = [
@@ -614,6 +635,7 @@ def run_agent(
                 "root": str(root),
                 "task": task,
                 "source_sha": source_sha,
+                "run_nonce": run_nonce,
                 "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(),
             },
         )
@@ -671,7 +693,13 @@ def run_agent(
             print(output)
             messages.append({"role": "tool", "tool_name": name, "content": output})
             arguments = call.get("function", {}).get("arguments", {}) or {}
-            execution_id = execution_identity(transcript, turn, call_index, call)
+            execution_id = execution_identity(
+                transcript,
+                turn,
+                call_index,
+                call,
+                run_nonce=run_nonce,
+            )
             mode = arguments.get("mode", "") if isinstance(arguments, dict) else ""
             verifier_id, verifier_sha256 = (
                 verifier_identity(mode) if name == "verify_math" and mode else (None, None)

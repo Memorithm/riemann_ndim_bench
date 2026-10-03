@@ -75,6 +75,7 @@ class EvidenceRecord:
     identity_complete: bool
     validation_errors: tuple[str, ...]
     prooflab_receipt_id: str | None
+    gate_target: bool
     fields: dict[str, str]
     raw_output: str
 
@@ -85,6 +86,7 @@ class ProofLedger:
     source_sha: str | None = None
     _allow_test_defaults: bool = False
     _test_counter: int = 0
+    gate_targets: dict[str, tuple[str, str]] = field(default_factory=dict)
 
     @classmethod
     def testing(cls) -> "ProofLedger":
@@ -104,7 +106,7 @@ class ProofLedger:
     ) -> EvidenceRecord:
         if self._allow_test_defaults:
             self._test_counter += 1
-            arguments = arguments or {"mode": mode}
+            arguments = arguments or {"mode": mode, "gate_target": True}
             proposition = proposition or f"unit-test proposition for {mode}"
             execution_id = execution_id or f"unit-test-execution-{self._test_counter}"
             verifier_id = verifier_id or "unit-test-verifier"
@@ -164,6 +166,25 @@ class ProofLedger:
         if not identity_complete:
             validation_errors.append("evidence identity is incomplete")
 
+        proposition_text = proposition.strip() if isinstance(proposition, str) else ""
+        input_arguments = {
+            key: value
+            for key, value in arguments.items()
+            if key not in {"proposition", "gate_target"}
+        }
+        proposition_sha256 = _canonical_sha256(proposition_text)
+        input_sha256 = _canonical_sha256(input_arguments)
+        gate_target = arguments.get("gate_target") is True
+        if gate_target and identity_complete:
+            identity = (proposition_sha256, input_sha256)
+            existing = self.gate_targets.get(mode)
+            if existing is None:
+                self.gate_targets[mode] = identity
+            elif existing != identity:
+                validation_errors.append(
+                    "gate target identity is already locked for this mode"
+                )
+
         schema_valid = not validation_errors
         status = (
             classify_verifier_output(fields, output)
@@ -171,18 +192,14 @@ class ProofLedger:
             else EvidenceStatus.UNKNOWN
         )
         authority = evidence_authority(status, schema_valid and identity_complete)
-        proposition_text = proposition.strip() if isinstance(proposition, str) else ""
-        input_arguments = {
-            key: value for key, value in arguments.items() if key != "proposition"
-        }
 
         record = EvidenceRecord(
             mode=mode,
             status=status,
             authority=authority,
             proposition=proposition_text,
-            proposition_sha256=_canonical_sha256(proposition_text),
-            input_sha256=_canonical_sha256(input_arguments),
+            proposition_sha256=proposition_sha256,
+            input_sha256=input_sha256,
             verifier_id=verifier_id or "",
             verifier_sha256=verifier_sha256 or "",
             source_sha=self.source_sha or "",
@@ -192,6 +209,7 @@ class ProofLedger:
             identity_complete=identity_complete,
             validation_errors=tuple(validation_errors),
             prooflab_receipt_id=None,
+            gate_target=gate_target,
             fields=fields,
             raw_output=output,
         )
@@ -199,11 +217,10 @@ class ProofLedger:
         return record
 
     def modes_used(self) -> set[str]:
-        modes = {record.mode for record in self.records}
         return {
             mode
-            for mode in modes
-            if (record := self.latest_record(mode))
+            for mode in self.gate_targets
+            if (record := self.gate_record(mode))
             and record.schema_valid
             and record.identity_complete
         }
@@ -214,6 +231,23 @@ class ProofLedger:
             None,
         )
 
+    def gate_record(self, mode: str) -> EvidenceRecord | None:
+        identity = self.gate_targets.get(mode)
+        if identity is None:
+            return None
+        proposition_sha256, input_sha256 = identity
+        return next(
+            (
+                record
+                for record in reversed(self.records)
+                if record.mode == mode
+                and record.gate_target
+                and record.proposition_sha256 == proposition_sha256
+                and record.input_sha256 == input_sha256
+            ),
+            None,
+        )
+
     def has_exact_success(
         self,
         mode: str,
@@ -221,7 +255,25 @@ class ProofLedger:
         proposition_sha256: str | None = None,
         input_sha256: str | None = None,
     ) -> bool:
-        record = self.latest_record(mode)
+        if proposition_sha256 is None and input_sha256 is None:
+            record = self.gate_record(mode)
+        else:
+            record = next(
+                (
+                    candidate
+                    for candidate in reversed(self.records)
+                    if candidate.mode == mode
+                    and (
+                        proposition_sha256 is None
+                        or candidate.proposition_sha256 == proposition_sha256
+                    )
+                    and (
+                        input_sha256 is None
+                        or candidate.input_sha256 == input_sha256
+                    )
+                ),
+                None,
+            )
         return bool(
             record
             and record.status == EvidenceStatus.PROVED_EXACT
@@ -234,11 +286,11 @@ class ProofLedger:
         )
 
     def has_prooflab_acceptance(self, mode: str) -> bool:
-        record = self.latest_record(mode)
+        record = self.gate_record(mode)
         return bool(record and record.prooflab_receipt_id)
 
     def has_successful_perturbative_extraction(self) -> bool:
-        record = self.latest_record("perturbative_recurrence")
+        record = self.gate_record("perturbative_recurrence")
         return bool(
             record
             and record.fields.get("mu1_status") == "PROVED_EXACT_SOLUTION"
@@ -264,7 +316,7 @@ class ProofLedger:
         )
 
     def best_asymptotic_power(self) -> str | None:
-        record = self.latest_record("asymptotic_power")
+        record = self.gate_record("asymptotic_power")
         if not record or not record.schema_valid or not record.identity_complete:
             return None
         return record.fields.get("best_power")
@@ -362,7 +414,7 @@ class ProofLedger:
                 f"verifier={record.verifier_id}@sha256:{record.verifier_sha256} "
                 f"source_sha={record.source_sha} execution_id={record.execution_id} "
                 f"exit_code={record.exit_code} schema_valid={record.schema_valid} "
-                f"prooflab=not_submitted{detail}"
+                f"gate_target={record.gate_target} prooflab=not_submitted{detail}"
             )
             if record.validation_errors:
                 lines.append("  validation_errors=" + "; ".join(record.validation_errors))
