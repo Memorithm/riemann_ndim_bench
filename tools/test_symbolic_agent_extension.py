@@ -57,7 +57,7 @@ class SymbolicAgentExtensionTests(unittest.TestCase):
             output,
         )
 
-        ledger = ProofLedger()
+        ledger = ProofLedger.testing()
         record = ledger.add_verifier_output("symbolic_forcing_ratio", output)
         self.assertEqual(record.status, EvidenceStatus.PROVED_EXACT)
 
@@ -81,7 +81,7 @@ class SymbolicAgentExtensionTests(unittest.TestCase):
         self.assertIn("candidate_status=MISMATCH", output)
         self.assertIn("exact_status=REFUTED_FORCING_QUOTIENT", output)
 
-        ledger = ProofLedger()
+        ledger = ProofLedger.testing()
         record = ledger.add_verifier_output("symbolic_forcing_ratio", output)
         self.assertEqual(record.status, EvidenceStatus.REFUTED)
 
@@ -107,7 +107,7 @@ class SymbolicAgentExtensionTests(unittest.TestCase):
         self.assertIn("candidate_status=PROVED_EQUAL", output)
         self.assertIn("exact_status=PROVED_BY_POCHHAMMER_QUOTIENT", output)
 
-        ledger = ProofLedger()
+        ledger = ProofLedger.testing()
         record = ledger.add_verifier_output("symbolic_hypergeometric", output)
         self.assertEqual(record.status, EvidenceStatus.PROVED_EXACT)
 
@@ -129,7 +129,7 @@ class SymbolicAgentExtensionTests(unittest.TestCase):
         self.assertIn("candidate_status=MISMATCH", output)
         self.assertIn("exact_status=REFUTED_CANDIDATE_RATIO", output)
 
-        ledger = ProofLedger()
+        ledger = ProofLedger.testing()
         record = ledger.add_verifier_output("symbolic_hypergeometric", output)
         self.assertEqual(record.status, EvidenceStatus.REFUTED)
 
@@ -180,7 +180,7 @@ class SymbolicAgentExtensionTests(unittest.TestCase):
         self.assertIn("candidate_status=PROVED_EQUAL", output)
         self.assertIn("exact_status=PROVED_BY_EXACT_COMPONENT_ASSEMBLY", output)
 
-        ledger = ProofLedger()
+        ledger = ProofLedger.testing()
         record = ledger.add_verifier_output("symbolic_assembly", output)
         self.assertEqual(record.status, EvidenceStatus.PROVED_EXACT)
 
@@ -205,7 +205,7 @@ class SymbolicAgentExtensionTests(unittest.TestCase):
         self.assertIn("candidate_status=MISMATCH", output)
         self.assertIn("exact_status=REFUTED_COMPONENT_ASSEMBLY", output)
 
-        ledger = ProofLedger()
+        ledger = ProofLedger.testing()
         record = ledger.add_verifier_output("symbolic_assembly", output)
         self.assertEqual(record.status, EvidenceStatus.REFUTED)
         self.assertFalse(ledger.has_exact_success("symbolic_assembly"))

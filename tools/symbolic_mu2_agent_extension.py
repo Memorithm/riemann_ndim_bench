@@ -186,21 +186,21 @@ def install(base: ModuleType) -> None:
 
     base.SYSTEM_PROMPT += r"""
 
-12. After the exact second-order recurrence has been extracted, do not jump
+13. After the exact second-order recurrence has been extracted, do not jump
     directly to a familiar binomial or hypergeometric family. For each parity or
     shifted lattice under study, derive the candidate normalized forcing
     quotient and audit it first with verify_math symbolic_forcing_ratio using
     the verified A, B, forcing F and exact site offset. A MISMATCH or REFUTED
     verdict is a hard contradiction.
-13. Only after the forcing quotient is recurrence-verified may you identify a
+14. Only after the forcing quotient is recurrence-verified may you identify a
     Pochhammer/hypergeometric coefficient family. Audit that proposed family
     with verify_math symbolic_hypergeometric.
-14. If a generating-function expression is derived, use verify_math
+15. If a generating-function expression is derived, use verify_math
     symbolic_finite_part to apply the theta polynomial and extract the local
     finite part in x=sqrt(1-z). This proves only the supplied symbolic
     expression; separately justify why that expression follows from the source
     recurrence and the verified forcing sequence.
-15. Before publishing a closed-form residual constant assembled from Gamma
+16. Before publishing a closed-form residual constant assembled from Gamma
     normalizations and local finite parts, call verify_math symbolic_assembly
     with the exact components, the algebraic combination that your derivation
     requires, and your proposed closed form. A MISMATCH/REFUTED assembly is a

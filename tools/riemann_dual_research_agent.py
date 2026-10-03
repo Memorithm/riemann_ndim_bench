@@ -95,7 +95,8 @@ def run_phase(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": assignment},
     ]
-    ledger = ProofLedger()
+    source_sha = base.workspace_source_sha(root)
+    ledger = ProofLedger(source_sha=source_sha)
     final_audit_sent = False
     turn_limit = max_tool_turns + 5 if enforce_final_gate else max_tool_turns
 
@@ -110,6 +111,7 @@ def run_phase(
             "phase": phase,
             "model": model,
             "assignment": assignment,
+            "source_sha": source_sha,
             "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(),
         },
     )
@@ -210,12 +212,25 @@ def run_phase(
             print(ledger.public_summary())
             return content, ledger
 
-        for call in calls:
+        for call_index, call in enumerate(calls, start=1):
             name, output = base.execute_tool(root, call)
             print(f"\n--- tool: {name} ---")
             print(output)
             messages.append({"role": "tool", "tool_name": name, "content": output})
             arguments = call.get("function", {}).get("arguments", {}) or {}
+            execution_id = base.execution_identity(
+                transcript,
+                turn,
+                call_index,
+                call,
+                namespace=phase,
+            )
+            mode = arguments.get("mode", "") if isinstance(arguments, dict) else ""
+            verifier_id, verifier_sha256 = (
+                base.verifier_identity(mode)
+                if name == "verify_math" and mode
+                else (None, None)
+            )
             append_jsonl(
                 transcript,
                 {
@@ -226,12 +241,22 @@ def run_phase(
                     "tool": name,
                     "arguments": arguments,
                     "output": output,
+                    "execution_id": execution_id,
+                    "verifier_id": verifier_id,
+                    "verifier_sha256": verifier_sha256,
                 },
             )
             if name == "verify_math" and isinstance(arguments, dict):
-                mode = arguments.get("mode", "")
                 if mode:
-                    ledger.add_verifier_output(mode, output)
+                    ledger.add_verifier_output(
+                        mode,
+                        output,
+                        arguments=arguments,
+                        proposition=arguments.get("proposition"),
+                        execution_id=execution_id,
+                        verifier_id=verifier_id,
+                        verifier_sha256=verifier_sha256,
+                    )
 
     if enforce_final_gate:
         failures = final_gate_failures(ledger)
