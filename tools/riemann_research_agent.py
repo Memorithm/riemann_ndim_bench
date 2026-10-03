@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import subprocess
@@ -27,6 +28,48 @@ OLLAMA_TIMEOUT = int(os.environ.get("RIEMANN_AGENT_TIMEOUT", "1800"))
 OLLAMA_RETRIES = int(os.environ.get("RIEMANN_AGENT_RETRIES", "2"))
 MAX_TOOL_OUTPUT = 40_000
 MAX_READ_LINES = 200
+
+
+def workspace_source_sha(root: Path) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=20,
+        check=False,
+    )
+    sha = result.stdout.strip()
+    if result.returncode != 0 or len(sha) != 40:
+        fail("cannot bind evidence to the workspace source SHA")
+    return sha
+
+
+def verifier_identity(mode: str) -> tuple[str, str]:
+    filename = "symbolic_mu2.py" if mode.startswith("symbolic_") else "verify_math.py"
+    script = Path(__file__).resolve().with_name(filename)
+    digest = hashlib.sha256(script.read_bytes()).hexdigest()
+    return filename, digest
+
+
+def execution_identity(
+    transcript: Path,
+    turn: int,
+    call_index: int,
+    call: dict,
+    *,
+    namespace: str = "single",
+) -> str:
+    payload = {
+        "transcript": str(transcript.resolve()),
+        "turn": turn,
+        "call_index": call_index,
+        "tool_call_id": call.get("id", ""),
+        "namespace": namespace,
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def fail(message: str) -> None:
@@ -260,6 +303,13 @@ VERIFY_PROPERTIES = {
         "type": "string",
         "enum": ["current_minus_neighbors_equals_mu", "verifier_canonical"],
     },
+    "proposition": {
+        "type": "string",
+        "description": (
+            "Canonical, self-contained statement of the proposition audited by "
+            "this exact verifier invocation."
+        ),
+    },
 }
 
 
@@ -334,7 +384,7 @@ TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": VERIFY_PROPERTIES,
-                "required": ["mode"],
+                "required": ["mode", "proposition"],
             },
         },
     },
@@ -363,6 +413,10 @@ Rules:
 10. Never upgrade numerical/asymptotic verifier output into symbolic proof.
 11. If deterministic verification contradicts hand algebra, the hand algebra is
     refuted until the discrepancy is located and explained.
+12. Every verify_math call must provide a canonical, self-contained proposition.
+    The evidence ledger binds that proposition, the exact arguments, verifier
+    digest, source SHA, execution ID, exit code and output schema. Script-verified
+    exact evidence is not a formal ProofLab acceptance.
 """.strip()
 
 
@@ -442,6 +496,10 @@ def load_resume_transcript(path: Path, *, expected_root: Path, expected_model: s
         fail("resume transcript workspace mismatch")
     if start.get("model") != expected_model:
         fail("resume transcript model mismatch")
+    expected_source_sha = workspace_source_sha(expected_root)
+    recorded_source_sha = start.get("source_sha")
+    if recorded_source_sha and recorded_source_sha != expected_source_sha:
+        fail("resume transcript source SHA mismatch")
     task = start.get("task", "")
     if not isinstance(task, str) or not task.strip():
         fail("resume transcript has no valid original task")
@@ -450,7 +508,7 @@ def load_resume_transcript(path: Path, *, expected_root: Path, expected_model: s
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": task},
     ]
-    ledger = ProofLedger()
+    ledger = ProofLedger(source_sha=expected_source_sha)
     completed_turns = 0
 
     for record in records:
@@ -469,9 +527,18 @@ def load_resume_transcript(path: Path, *, expected_root: Path, expected_model: s
             output = record.get("output", "")
             messages.append({"role": "tool", "tool_name": name, "content": output})
             if name == "verify_math":
-                mode = (record.get("arguments") or {}).get("mode", "")
+                arguments = record.get("arguments") or {}
+                mode = arguments.get("mode", "")
                 if mode:
-                    ledger.add_verifier_output(mode, output)
+                    ledger.add_verifier_output(
+                        mode,
+                        output,
+                        arguments=arguments,
+                        proposition=arguments.get("proposition"),
+                        execution_id=record.get("execution_id"),
+                        verifier_id=record.get("verifier_id"),
+                        verifier_sha256=record.get("verifier_sha256"),
+                    )
 
     if completed_turns < 1:
         fail("resume transcript contains no completed assistant turn")
@@ -533,7 +600,8 @@ def run_agent(
         )
     else:
         completed_turns = 0
-        ledger = ProofLedger()
+        source_sha = workspace_source_sha(root)
+        ledger = ProofLedger(source_sha=source_sha)
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": task},
@@ -545,6 +613,7 @@ def run_agent(
                 "model": model,
                 "root": str(root),
                 "task": task,
+                "source_sha": source_sha,
                 "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(),
             },
         )
@@ -596,12 +665,17 @@ def run_agent(
             print(f"TRANSCRIPT={transcript}")
             return 0
 
-        for call in calls:
+        for call_index, call in enumerate(calls, start=1):
             name, output = execute_tool(root, call)
             print(f"\n--- tool: {name} ---")
             print(output)
             messages.append({"role": "tool", "tool_name": name, "content": output})
             arguments = call.get("function", {}).get("arguments", {}) or {}
+            execution_id = execution_identity(transcript, turn, call_index, call)
+            mode = arguments.get("mode", "") if isinstance(arguments, dict) else ""
+            verifier_id, verifier_sha256 = (
+                verifier_identity(mode) if name == "verify_math" and mode else (None, None)
+            )
             append_jsonl(
                 transcript,
                 {
@@ -610,12 +684,22 @@ def run_agent(
                     "tool": name,
                     "arguments": arguments,
                     "output": output,
+                    "execution_id": execution_id,
+                    "verifier_id": verifier_id,
+                    "verifier_sha256": verifier_sha256,
                 },
             )
             if name == "verify_math" and isinstance(arguments, dict):
-                mode = arguments.get("mode", "")
                 if mode:
-                    ledger.add_verifier_output(mode, output)
+                    ledger.add_verifier_output(
+                        mode,
+                        output,
+                        arguments=arguments,
+                        proposition=arguments.get("proposition"),
+                        execution_id=execution_id,
+                        verifier_id=verifier_id,
+                        verifier_sha256=verifier_sha256,
+                    )
 
     print("\nMAX_TURNS_REACHED_WITHOUT_FINAL_ANSWER")
     print(ledger.public_summary())

@@ -104,6 +104,15 @@ final synthesis is withheld unless the final phase has executed:
 and the recurrence transform plus first-order perturbative candidate have exact
 success verdicts.
 
+Each call also supplies a canonical `proposition`. The ledger binds its digest
+to the exact input digest, verifier digest, Git source SHA, execution identity,
+zero exit code and validated output schema. A later result for a mode supersedes
+an older result for gating, preventing a success for one candidate from
+satisfying a later candidate. See
+[`EVIDENCE_IDENTITY_CONTRACT.md`](EVIDENCE_IDENTITY_CONTRACT.md) for the full
+contract and the distinction between script-verified exact evidence and formal
+ProofLab acceptance.
+
 ## Read-only tool boundary
 
 Agents may only:

@@ -168,6 +168,10 @@ report.
 ## ProofLedger behavior
 
 The ledger understands all four post-perturbative symbolic modes directly.
+Its admissibility and identity requirements are defined in
+[`EVIDENCE_IDENTITY_CONTRACT.md`](EVIDENCE_IDENTITY_CONTRACT.md). In particular,
+an exact verifier result is script-verified evidence and is not a formal
+ProofLab acceptance.
 
 A candidate mismatch is a hard `refuted` record. The convenience predicate
 

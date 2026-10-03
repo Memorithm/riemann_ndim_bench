@@ -16,7 +16,7 @@ from proof_ledger import ProofLedger
 
 class SymbolicDualGateTests(unittest.TestCase):
     def base_final_ledger(self) -> ProofLedger:
-        ledger = ProofLedger()
+        ledger = ProofLedger.testing()
         ledger.add_verifier_output(
             "recurrence_transform",
             "exact_status=PROVED_BY_EXACT_AFFINE_SUBSTITUTION_AND_SIGN_NORMALIZATION",
