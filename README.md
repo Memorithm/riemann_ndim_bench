@@ -16,6 +16,8 @@ Le graphe de dépendances vers RH et les frontières de portée du banc sont aud
 
 Le module [`weil_sign_gate`](src/weil_sign_gate.rs) vérifie des marges de signe **conditionnelles** sur les formes de Weil de dimension finie : Gershgorin pour une positivité suffisante, ou témoin de Rayleigh strictement négatif, avec bornes d'erreurs **à fournir et justifier indépendamment**. Il ne produit ni certification d'erreur d'intégration ni preuve de RH. Voir [`docs/FINITE_WEIL_SIGN_GATE.md`](docs/FINITE_WEIL_SIGN_GATE.md).
 
+Le module [`weil_schur_gate`](src/weil_schur_gate.rs) ajoute un critère de complément de Schur sur une partition finie de la matrice et une interface pour les bornes conditionnelles d'un opérateur à deux blocs. La liaison avec le complément de Sonin de dimension infinie et les bornes certifiées reste à démontrer. Voir [`docs/CONDITIONAL_WEIL_SCHUR_GATE.md`](docs/CONDITIONAL_WEIL_SCHUR_GATE.md) et [Andrews, Connes, La Gatta (2026)](https://arxiv.org/abs/2611.13129).
+
 ## État du banc
 
 ### Phase 0–2 — fondation et noyau numérique
