@@ -163,6 +163,10 @@ RiemannBench may retain:
 
 It should not continue extending a general tridiagonal-operator theory merely because that theory was first encountered here.
 
+### Conditional Schur test implemented (November 2026)
+
+The Rust module `weil_schur_gate` now evaluates finite block-Schur sufficiency margins using caller-declared matrix-entry error bounds; it also exposes the abstract block coercivity inequality `delta - beta^2/alpha > 0`. This is **conditional finite/operator algebra**, not proof of the missing semilocal-to-Weil implication. The infinite-dimensional tail coercivity, correct spectral projection, cross-block norm, certified input errors, and global support-window bridge remain **OPEN BRIDGES**. The primary methodological comparison is Andrews–Connes–La Gatta, arXiv:2611.13129 (9 November 2026), whose abstract explicitly assumes an additional positivity hypothesis at the archimedean place.
+
 ## 6. The main Riemann-specific open bridge
 
 The next central question is:
