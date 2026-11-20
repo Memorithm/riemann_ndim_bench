@@ -157,6 +157,13 @@ pub fn audit_conditional_schur_margin(
     let tail_schur_lower_bound = if head_lower_bound > 0.0 {
         let coupling_square = coupling_norm_upper_bound * coupling_norm_upper_bound;
         checked_finite("coupling norm squared", coupling_square)?;
+        // A small nonzero beta can square to zero or a subnormal. Dividing
+        // that rounded value by tiny alpha can flip the strict sign.
+        if coupling_norm_upper_bound != 0.0 && coupling_square < f64::MIN_POSITIVE {
+            return Err(FiniteWeilSchurError::NonFiniteComputation {
+                stage: "coupling square underflow",
+            });
+        }
         let reduction = coupling_square / head_lower_bound;
         checked_finite("Schur reduction", reduction)?;
         let lower = tail_lower_bound - reduction;
@@ -270,7 +277,13 @@ fn audit_dense_schur_gate(
         for j in head_dimension..n {
             let error = errors[i * n + j].max(errors[j * n + i]);
             let magnitude = matrix[i * n + j].abs() + error;
-            coupling_square += magnitude * magnitude;
+            let square = magnitude * magnitude;
+            if magnitude != 0.0 && square < f64::MIN_POSITIVE {
+                return Err(FiniteWeilSchurError::NonFiniteComputation {
+                    stage: "cross-block Frobenius square underflow",
+                });
+            }
+            coupling_square += square;
         }
     }
     checked_finite("coupling Frobenius norm squared", coupling_square)?;
@@ -370,6 +383,26 @@ mod tests {
         assert_eq!(
             audit.verdict(),
             ConditionalSchurVerdict::StrictlyPositiveUnderAssumptions
+        );
+    }
+
+    #[test]
+    fn underflowed_coupling_square_cannot_flip_the_schur_sign() {
+        // beta² underflows to zero while beta²/alpha is large enough to
+        // make the *exact* Schur margin negative.
+        let error = audit_conditional_schur_margin(1e-300, 1e-150, 1e-200).unwrap_err();
+        assert!(matches!(
+            error,
+            FiniteWeilSchurError::NonFiniteComputation {
+                stage: "coupling square underflow"
+            }
+        ));
+        assert!(
+            audit_conditional_schur_margin(1e-300, 1e-150, 0.0)
+                .unwrap()
+                .tail_schur_lower_bound()
+                .unwrap()
+                > 0.0
         );
     }
 

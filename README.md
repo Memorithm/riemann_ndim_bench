@@ -18,6 +18,8 @@ Le module [`weil_sign_gate`](src/weil_sign_gate.rs) vérifie des marges de signe
 
 Le module [`weil_schur_gate`](src/weil_schur_gate.rs) ajoute un critère de complément de Schur sur une partition finie de la matrice et une interface pour les bornes conditionnelles d'un opérateur à deux blocs. La liaison avec le complément de Sonin de dimension infinie et les bornes certifiées reste à démontrer. Voir [`docs/CONDITIONAL_WEIL_SCHUR_GATE.md`](docs/CONDITIONAL_WEIL_SCHUR_GATE.md) et [Andrews, Connes, La Gatta (2026)](https://arxiv.org/abs/2611.13129).
 
+Le nouveau module [`weil_rational_gate`](src/weil_rational_gate.rs) vérifie les signes sur des **intervalles rationnels à dénominateur commun par arithmétique entière exacte** (Gershgorin, témoin négatif de Rayleigh, Schur). Il rejette les débordements `i128` plutôt que de conclure abusivement. Les **bornes d'entrée doivent encore être démontrées par une intégration certifiée** ; le module ne les invente pas et n'établit pas RH. Voir [`docs/EXACT_WEIL_INTERVAL_SIGN_GATE.md`](docs/EXACT_WEIL_INTERVAL_SIGN_GATE.md).
+
 ## État du banc
 
 ### Phase 0–2 — fondation et noyau numérique
