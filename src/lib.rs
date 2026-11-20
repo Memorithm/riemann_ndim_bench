@@ -47,5 +47,6 @@ pub mod weil_sine_truncation;
 pub mod weil_subspace;
 pub mod weil_support;
 pub mod weil_support_sweep;
+pub mod weil_sign_gate;
 
 pub use foundation::{CRITICAL_SIGMA, PiRadialGeometry, SpectralPoint};
