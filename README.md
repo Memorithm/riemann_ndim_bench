@@ -14,6 +14,8 @@ Les calculs actuels portent sur des compressions finies d'opérateurs de type pr
 
 Le graphe de dépendances vers RH et les frontières de portée du banc sont audités dans [`docs/RH_PROOF_DEPENDENCY_AUDIT.md`](docs/RH_PROOF_DEPENDENCY_AUDIT.md).
 
+Le module [`weil_sign_gate`](src/weil_sign_gate.rs) vérifie des marges de signe **conditionnelles** sur les formes de Weil de dimension finie : Gershgorin pour une positivité suffisante, ou témoin de Rayleigh strictement négatif, avec bornes d'erreurs **à fournir et justifier indépendamment**. Il ne produit ni certification d'erreur d'intégration ni preuve de RH. Voir [`docs/FINITE_WEIL_SIGN_GATE.md`](docs/FINITE_WEIL_SIGN_GATE.md).
+
 ## État du banc
 
 ### Phase 0–2 — fondation et noyau numérique
