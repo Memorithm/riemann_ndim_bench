@@ -120,18 +120,31 @@ impl ExactWeilSignAudit {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ExactWeilSignError {
     EmptyMatrix,
-    InvalidScale { scale: i128 },
+    InvalidScale {
+        scale: i128,
+    },
     DimensionOverflow,
     InvalidLength {
         field: &'static str,
         expected: usize,
         actual: usize,
     },
-    ReversedInterval { lower: i128, upper: i128 },
-    AsymmetricInterval { row: usize, col: usize },
-    InvalidSplit { head: usize, dimension: usize },
+    ReversedInterval {
+        lower: i128,
+        upper: i128,
+    },
+    AsymmetricInterval {
+        row: usize,
+        col: usize,
+    },
+    InvalidSplit {
+        head: usize,
+        dimension: usize,
+    },
     ZeroDirection,
-    ArithmeticOverflow { stage: &'static str },
+    ArithmeticOverflow {
+        stage: &'static str,
+    },
 }
 
 impl fmt::Display for ExactWeilSignError {
@@ -195,8 +208,7 @@ pub fn audit_exact_weil_interval_sign(
         }
     }
 
-    let gershgorin_lower_numerator =
-        gershgorin_block_lower(dimension, matrix, 0, dimension)?;
+    let gershgorin_lower_numerator = gershgorin_block_lower(dimension, matrix, 0, dimension)?;
 
     // For each term v_i * M_ij * v_j, choose the upper interval endpoint
     // according to the exact sign of the integer coefficient v_i * v_j.
@@ -210,8 +222,7 @@ pub fn audit_exact_weil_interval_sign(
                 matrix[i * dimension + j].lower
             };
             let term = mul(coefficient, endpoint, "Rayleigh term")?;
-            rayleigh_upper_numerator =
-                add(rayleigh_upper_numerator, term, "Rayleigh upper sum")?;
+            rayleigh_upper_numerator = add(rayleigh_upper_numerator, term, "Rayleigh upper sum")?;
         }
     }
 
@@ -222,15 +233,13 @@ pub fn audit_exact_weil_interval_sign(
 
     if let Some(head) = head_dimension {
         let head_lower = gershgorin_block_lower(dimension, matrix, 0, head)?;
-        let tail_lower =
-            gershgorin_block_lower(dimension, matrix, head, dimension)?;
+        let tail_lower = gershgorin_block_lower(dimension, matrix, head, dimension)?;
         let mut coupling_squared = 0_i128;
         for i in 0..head {
             for j in head..dimension {
                 let coupling = max_abs(matrix[i * dimension + j])?;
                 let square = mul(coupling, coupling, "cross-block coupling square")?;
-                coupling_squared =
-                    add(coupling_squared, square, "cross-block Frobenius square")?;
+                coupling_squared = add(coupling_squared, square, "cross-block Frobenius square")?;
             }
         }
         head_lower_numerator = Some(head_lower);
@@ -287,11 +296,7 @@ fn gershgorin_block_lower(
                 )?;
             }
         }
-        let row = sub(
-            matrix[i * dimension + i].lower,
-            radius,
-            "Gershgorin row",
-        )?;
+        let row = sub(matrix[i * dimension + i].lower, radius, "Gershgorin row")?;
         lower = lower.min(row);
     }
     Ok(lower)
@@ -339,13 +344,17 @@ mod tests {
     #[test]
     fn exact_gershgorin_positive_with_nonzero_intervals() {
         let matrix = [
-            interval(190, 210), interval(-20, 20),
-            interval(-20, 20), interval(90, 110),
+            interval(190, 210),
+            interval(-20, 20),
+            interval(-20, 20),
+            interval(90, 110),
         ];
-        let result = audit_exact_weil_interval_sign(2, 100, &matrix, &[1, -1], None)
-            .unwrap();
+        let result = audit_exact_weil_interval_sign(2, 100, &matrix, &[1, -1], None).unwrap();
         assert_eq!(result.gershgorin_lower_numerator(), 70);
-        assert_eq!(result.verdict(), ExactFiniteWeilSign::StrictlyPositiveFiniteSpan);
+        assert_eq!(
+            result.verdict(),
+            ExactFiniteWeilSign::StrictlyPositiveFiniteSpan
+        );
         assert!(result.rayleigh_upper_numerator() > 0);
     }
 
@@ -354,32 +363,25 @@ mod tests {
         // At scale 100, M approximately equals
         // [2.0 0.2 1.6; 0.2 2.0 1.6; 1.6 1.6 3.0].
         // Entrywise uncertainty 0.01 is encoded exactly as +/-1 unit.
-        let centers = [
-            200, 20, 160,
-            20, 200, 160,
-            160, 160, 300,
-        ];
+        let centers = [200, 20, 160, 20, 200, 160, 160, 160, 300];
         let matrix = centers.map(|value| interval(value - 1, value + 1));
-        let result = audit_exact_weil_interval_sign(3, 100, &matrix, &[1, 0, 0], Some(2))
-            .unwrap();
+        let result = audit_exact_weil_interval_sign(3, 100, &matrix, &[1, 0, 0], Some(2)).unwrap();
         assert_eq!(result.gershgorin_lower_numerator(), -23);
         assert_eq!(result.head_lower_numerator(), Some(178));
         assert_eq!(result.tail_lower_numerator(), Some(299));
         assert_eq!(result.coupling_frobenius_squared_numerator(), Some(51_842));
         assert_eq!(result.schur_discriminant_numerator(), Some(1_380));
-        assert_eq!(result.verdict(), ExactFiniteWeilSign::StrictlyPositiveFiniteSpan);
+        assert_eq!(
+            result.verdict(),
+            ExactFiniteWeilSign::StrictlyPositiveFiniteSpan
+        );
     }
 
     #[test]
     fn wide_enclosure_invalidates_schur_decision() {
-        let centers = [
-            200, 20, 160,
-            20, 200, 160,
-            160, 160, 300,
-        ];
+        let centers = [200, 20, 160, 20, 200, 160, 160, 160, 300];
         let matrix = centers.map(|value| interval(value - 10, value + 10));
-        let result = audit_exact_weil_interval_sign(3, 100, &matrix, &[1, 0, 0], Some(2))
-            .unwrap();
+        let result = audit_exact_weil_interval_sign(3, 100, &matrix, &[1, 0, 0], Some(2)).unwrap();
         assert_eq!(result.verdict(), ExactFiniteWeilSign::Undetermined);
         assert!(result.schur_discriminant_numerator().unwrap() < 0);
     }
@@ -387,13 +389,17 @@ mod tests {
     #[test]
     fn exact_negative_rayleigh_witness_requires_strict_upper_sign() {
         let matrix = [
-            interval(-101, -99), interval(0, 0),
-            interval(0, 0), interval(199, 201),
+            interval(-101, -99),
+            interval(0, 0),
+            interval(0, 0),
+            interval(199, 201),
         ];
-        let result = audit_exact_weil_interval_sign(2, 100, &matrix, &[3, 0], Some(1))
-            .unwrap();
+        let result = audit_exact_weil_interval_sign(2, 100, &matrix, &[3, 0], Some(1)).unwrap();
         assert_eq!(result.rayleigh_upper_numerator(), -891);
-        assert_eq!(result.verdict(), ExactFiniteWeilSign::StrictlyNegativeWitness);
+        assert_eq!(
+            result.verdict(),
+            ExactFiniteWeilSign::StrictlyNegativeWitness
+        );
         assert_eq!(result.schur_discriminant_numerator(), None);
     }
 
@@ -415,8 +421,10 @@ mod tests {
             Err(ExactWeilSignError::EmptyMatrix)
         ));
         let matrix = [
-            interval(1, 1), interval(0, 0),
-            interval(0, 1), interval(1, 1),
+            interval(1, 1),
+            interval(0, 0),
+            interval(0, 1),
+            interval(1, 1),
         ];
         assert!(matches!(
             audit_exact_weil_interval_sign(2, 1, &matrix, &[1, 0], None),
@@ -431,8 +439,10 @@ mod tests {
             Err(ExactWeilSignError::InvalidLength { .. })
         ));
         let symmetric = [
-            interval(1, 1), interval(0, 0),
-            interval(0, 0), interval(1, 1),
+            interval(1, 1),
+            interval(0, 0),
+            interval(0, 0),
+            interval(1, 1),
         ];
         assert!(matches!(
             audit_exact_weil_interval_sign(2, 1, &symmetric, &[0, 0], None),
@@ -447,8 +457,10 @@ mod tests {
     #[test]
     fn integer_overflow_is_rejected_not_promoted_to_a_sign() {
         let impossible_magnitude = [
-            interval(1, 1), interval(i128::MIN, i128::MIN),
-            interval(i128::MIN, i128::MIN), interval(1, 1),
+            interval(1, 1),
+            interval(i128::MIN, i128::MIN),
+            interval(i128::MIN, i128::MIN),
+            interval(1, 1),
         ];
         assert!(matches!(
             audit_exact_weil_interval_sign(2, 1, &impossible_magnitude, &[1, 0], None),
@@ -457,8 +469,10 @@ mod tests {
         // The following 2x2 deliberately overflows the exact Schur product:
         let huge = i128::MAX / 3;
         let matrix = [
-            interval(huge, huge), interval(0, 0),
-            interval(0, 0), interval(huge, huge),
+            interval(huge, huge),
+            interval(0, 0),
+            interval(0, 0),
+            interval(huge, huge),
         ];
         assert!(matches!(
             audit_exact_weil_interval_sign(2, 1, &matrix, &[1, 0], Some(1)),
@@ -487,16 +501,13 @@ mod tests {
                             interval(d - radius, d + radius),
                         ];
                         for witness in [[1_i128, 0], [0, 1], [1, 1], [1, -1]] {
-                            let audit = audit_exact_weil_interval_sign(
-                                2, 1, &entries, &witness, Some(1)
-                            ).unwrap();
-                            let exact_rayleigh =
-                                witness[0] * witness[0] * a
+                            let audit =
+                                audit_exact_weil_interval_sign(2, 1, &entries, &witness, Some(1))
+                                    .unwrap();
+                            let exact_rayleigh = witness[0] * witness[0] * a
                                 + 2 * witness[0] * witness[1] * b
                                 + witness[1] * witness[1] * d;
-                            assert!(
-                                audit.rayleigh_upper_numerator() >= exact_rayleigh
-                            );
+                            assert!(audit.rayleigh_upper_numerator() >= exact_rayleigh);
                             match audit.verdict() {
                                 ExactFiniteWeilSign::StrictlyPositiveFiniteSpan => {
                                     assert!(a > 0 && a * d - b * b > 0);
@@ -516,19 +527,23 @@ mod tests {
     #[test]
     fn exact_result_is_unchanged_under_common_scale_multiplication() {
         let a = [
-            interval(20, 20), interval(-1, 1),
-            interval(-1, 1), interval(10, 10),
+            interval(20, 20),
+            interval(-1, 1),
+            interval(-1, 1),
+            interval(10, 10),
         ];
         let b = [
-            interval(200, 200), interval(-10, 10),
-            interval(-10, 10), interval(100, 100),
+            interval(200, 200),
+            interval(-10, 10),
+            interval(-10, 10),
+            interval(100, 100),
         ];
-        let small = audit_exact_weil_interval_sign(2, 10, &a, &[1, 1], Some(1))
-            .unwrap();
-        let large = audit_exact_weil_interval_sign(2, 100, &b, &[1, 1], Some(1))
-            .unwrap();
+        let small = audit_exact_weil_interval_sign(2, 10, &a, &[1, 1], Some(1)).unwrap();
+        let large = audit_exact_weil_interval_sign(2, 100, &b, &[1, 1], Some(1)).unwrap();
         assert_eq!(small.verdict(), large.verdict());
-        assert_eq!(small.schur_discriminant_numerator().unwrap() * 100,
-                   large.schur_discriminant_numerator().unwrap());
+        assert_eq!(
+            small.schur_discriminant_numerator().unwrap() * 100,
+            large.schur_discriminant_numerator().unwrap()
+        );
     }
 }
