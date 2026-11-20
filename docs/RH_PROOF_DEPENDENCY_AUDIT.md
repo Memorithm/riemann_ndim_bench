@@ -167,6 +167,10 @@ It should not continue extending a general tridiagonal-operator theory merely be
 
 The Rust module `weil_schur_gate` now evaluates finite block-Schur sufficiency margins using caller-declared matrix-entry error bounds; it also exposes the abstract block coercivity inequality `delta - beta^2/alpha > 0`. This is **conditional finite/operator algebra**, not proof of the missing semilocal-to-Weil implication. The infinite-dimensional tail coercivity, correct spectral projection, cross-block norm, certified input errors, and global support-window bridge remain **OPEN BRIDGES**. The primary methodological comparison is Andrews–Connes–La Gatta, arXiv:2611.13129 (9 November 2026), whose abstract explicitly assumes an additional positivity hypothesis at the archimedean place.
 
+### Exact integer enclosure algebra implemented (November 2026)
+
+The new Rust module `weil_rational_gate` computes finite Gershgorin, Rayleigh and block-Schur sign implications using checked integer arithmetic and caller-supplied rational matrix-entry intervals. Its decisions are exact **given the intervals**; the validity of those intervals for the actual compact Weil pairing is not established by the module. Unlike the older `f64` gates, the final comparison incurs no rounding and overflow is rejected. The creation of rigorously validated source-locked matrix-entry intervals, the genuine infinite complement and the global semilocal bridge all remain **OPEN BRIDGES**. See `docs/EXACT_WEIL_INTERVAL_SIGN_GATE.md`.
+
 ## 6. The main Riemann-specific open bridge
 
 The next central question is:
