@@ -138,9 +138,13 @@ pub fn audit_conditional_schur_margin(
     tail_lower_bound: f64,
     coupling_norm_upper_bound: f64,
 ) -> Result<ConditionalSchurMargin, FiniteWeilSchurError> {
-    for (index, value) in [head_lower_bound, tail_lower_bound, coupling_norm_upper_bound]
-        .into_iter()
-        .enumerate()
+    for (index, value) in [
+        head_lower_bound,
+        tail_lower_bound,
+        coupling_norm_upper_bound,
+    ]
+    .into_iter()
+    .enumerate()
     {
         if !value.is_finite() || (index == 2 && value < 0.0) {
             return Err(FiniteWeilSchurError::InvalidValue {
@@ -273,11 +277,7 @@ fn audit_dense_schur_gate(
     let coupling_upper = coupling_square.sqrt();
     checked_finite("coupling Frobenius norm", coupling_upper)?;
 
-    let margin = audit_conditional_schur_margin(
-        head_lower,
-        tail_lower,
-        coupling_upper,
-    )?;
+    let margin = audit_conditional_schur_margin(head_lower, tail_lower, coupling_upper)?;
     Ok(FiniteWeilSchurAudit {
         dimension: n,
         head_dimension,
@@ -308,10 +308,7 @@ fn block_gershgorin_lower(
     Ok(minimum)
 }
 
-fn checked_finite(
-    stage: &'static str,
-    value: f64,
-) -> Result<(), FiniteWeilSchurError> {
+fn checked_finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilSchurError> {
     if value.is_finite() {
         Ok(())
     } else {
@@ -322,9 +319,7 @@ fn checked_finite(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::semilocal_compact_archimedean::{
-        CompactArchimedeanBump, PositiveRational,
-    };
+    use crate::semilocal_compact_archimedean::{CompactArchimedeanBump, PositiveRational};
     use crate::weil_quadratic_matrix::audit_finite_weil_quadratic_matrix;
 
     #[test]
@@ -354,7 +349,10 @@ mod tests {
     fn zero_coupling_and_strict_positive_blocks_are_positive() {
         let a = [0.8, 0.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.0, 2.0];
         let audit = audit_dense_schur_gate(3, &a, &[0.01; 9], 1).unwrap();
-        assert_eq!(audit.verdict(), ConditionalSchurVerdict::StrictlyPositiveUnderAssumptions);
+        assert_eq!(
+            audit.verdict(),
+            ConditionalSchurVerdict::StrictlyPositiveUnderAssumptions
+        );
         assert!(audit.margin().tail_schur_lower_bound().unwrap() > 0.0);
     }
 
@@ -415,8 +413,7 @@ mod tests {
             PositiveRational::new(7, 2).unwrap(),
         )
         .unwrap();
-        let matrix = audit_finite_weil_quadratic_matrix(bump, 2, 28, 28, 40)
-            .unwrap();
+        let matrix = audit_finite_weil_quadratic_matrix(bump, 2, 28, 28, 40).unwrap();
         // E=0 here probes only the adapter; it is NOT a certified error budget.
         let audit = audit_finite_weil_schur_gate(&matrix, &[0.0; 4], 1).unwrap();
         assert_eq!(audit.head_dimension(), 1);
