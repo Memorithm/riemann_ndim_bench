@@ -397,11 +397,13 @@ mod tests {
                 stage: "coupling square underflow"
             }
         ));
-        assert!(audit_conditional_schur_margin(1e-300, 1e-150, 0.0)
-            .unwrap()
-            .tail_schur_lower_bound()
-            .unwrap()
-            > 0.0);
+        assert!(
+            audit_conditional_schur_margin(1e-300, 1e-150, 0.0)
+                .unwrap()
+                .tail_schur_lower_bound()
+                .unwrap()
+                > 0.0
+        );
     }
 
     #[test]
