@@ -205,9 +205,7 @@ fn evaluate_dense_sign_gate(
             // Taking the larger of the two makes mismatched budgets safe.
             let error = errors[i * n + j].max(errors[j * n + i]);
             rayleigh_numerator += direction[i] * matrix[i * n + j] * direction[j];
-            rayleigh_uncertainty_numerator += direction[i].abs()
-                * error
-                * direction[j].abs();
+            rayleigh_uncertainty_numerator += direction[i].abs() * error * direction[j].abs();
             if i != j {
                 row_radius += matrix[i * n + j].abs() + error;
             }
@@ -260,17 +258,14 @@ fn finite(stage: &'static str, value: f64) -> Result<(), FiniteWeilSignGateError
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::semilocal_compact_archimedean::{
-        CompactArchimedeanBump, PositiveRational,
-    };
+    use crate::semilocal_compact_archimedean::{CompactArchimedeanBump, PositiveRational};
     use crate::weil_quadratic_matrix::audit_finite_weil_quadratic_matrix;
 
     #[test]
     fn strictly_positive_finite_span_with_entry_uncertainty() {
         let a = [2.0, 0.25, 0.25, 1.0];
         let errors = [0.1, 0.05, 0.05, 0.1];
-        let audit = evaluate_dense_sign_gate(2, &a, &errors, &[1.0, -1.0])
-            .unwrap();
+        let audit = evaluate_dense_sign_gate(2, &a, &errors, &[1.0, -1.0]).unwrap();
         assert_eq!(
             audit.verdict(),
             ConditionalFiniteWeilSign::StrictlyPositiveFiniteSpan
@@ -283,8 +278,7 @@ mod tests {
     fn negative_witness_survives_declared_error_budget() {
         let a = [-1.0, 0.0, 0.0, 2.0];
         let errors = [0.1, 0.0, 0.0, 0.1];
-        let audit = evaluate_dense_sign_gate(2, &a, &errors, &[3.0, 0.0])
-            .unwrap();
+        let audit = evaluate_dense_sign_gate(2, &a, &errors, &[3.0, 0.0]).unwrap();
         assert_eq!(
             audit.verdict(),
             ConditionalFiniteWeilSign::StrictlyNegativeWitness
@@ -296,13 +290,7 @@ mod tests {
     #[test]
     fn undecided_sign_remains_undetermined() {
         let a = [0.0, 1.0, 1.0, 0.0];
-        let audit = evaluate_dense_sign_gate(
-            2,
-            &a,
-            &[0.2, 0.2, 0.2, 0.2],
-            &[1.0, 1.0],
-        )
-        .unwrap();
+        let audit = evaluate_dense_sign_gate(2, &a, &[0.2, 0.2, 0.2, 0.2], &[1.0, 1.0]).unwrap();
         assert_eq!(audit.verdict(), ConditionalFiniteWeilSign::Undetermined);
     }
 
@@ -342,14 +330,10 @@ mod tests {
             PositiveRational::new(7, 2).unwrap(),
         )
         .unwrap();
-        let matrix = audit_finite_weil_quadratic_matrix(
-            bump, 1, 28, 28, 40,
-        )
-        .unwrap();
+        let matrix = audit_finite_weil_quadratic_matrix(bump, 1, 28, 28, 40).unwrap();
         // Zero errors here are a *synthetic input* for API integration, not
         // an assertion that the numerical quadrature is error-free.
-        let audit = audit_finite_weil_sign_gate(&matrix, &[0.0], &[1.0])
-            .unwrap();
+        let audit = audit_finite_weil_sign_gate(&matrix, &[0.0], &[1.0]).unwrap();
         assert_eq!(audit.dimension(), 1);
         assert!(audit.direction_rayleigh().is_finite());
     }
