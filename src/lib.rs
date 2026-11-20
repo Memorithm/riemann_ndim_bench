@@ -38,6 +38,7 @@ pub mod weil_generalized_spectrum;
 pub mod weil_h1_continuity;
 pub mod weil_quadratic_matrix;
 pub mod weil_refinement;
+pub mod weil_sign_gate;
 pub mod weil_sine_continuity;
 pub mod weil_sine_direct_q;
 pub mod weil_sine_pairing;
@@ -47,6 +48,5 @@ pub mod weil_sine_truncation;
 pub mod weil_subspace;
 pub mod weil_support;
 pub mod weil_support_sweep;
-pub mod weil_sign_gate;
 
 pub use foundation::{CRITICAL_SIGMA, PiRadialGeometry, SpectralPoint};
