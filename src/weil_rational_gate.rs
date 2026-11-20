@@ -430,8 +430,12 @@ mod tests {
             audit_exact_weil_interval_sign(2, 1, &matrix[..3], &[1, 0], None),
             Err(ExactWeilSignError::InvalidLength { .. })
         ));
+        let symmetric = [
+            interval(1, 1), interval(0, 0),
+            interval(0, 0), interval(1, 1),
+        ];
         assert!(matches!(
-            audit_exact_weil_interval_sign(2, 1, &matrix, &[0, 0], None),
+            audit_exact_weil_interval_sign(2, 1, &symmetric, &[0, 0], None),
             Err(ExactWeilSignError::ZeroDirection)
         ));
         assert!(matches!(
@@ -442,14 +446,13 @@ mod tests {
 
     #[test]
     fn integer_overflow_is_rejected_not_promoted_to_a_sign() {
-        let minimum = [interval(i128::MIN, i128::MIN)];
+        let impossible_magnitude = [
+            interval(1, 1), interval(i128::MIN, i128::MIN),
+            interval(i128::MIN, i128::MIN), interval(1, 1),
+        ];
         assert!(matches!(
-            audit_exact_weil_interval_sign(1, 1, &minimum, &[1], None),
+            audit_exact_weil_interval_sign(2, 1, &impossible_magnitude, &[1, 0], None),
             Err(ExactWeilSignError::ArithmeticOverflow { .. })
-                | Ok(ExactWeilSignAudit {
-                    verdict: ExactFiniteWeilSign::StrictlyNegativeWitness,
-                    ..
-                })
         ));
         // The following 2x2 deliberately overflows the exact Schur product:
         let huge = i128::MAX / 3;
@@ -465,6 +468,49 @@ mod tests {
             audit_exact_weil_interval_sign(1, 1, &[interval(1, 1)], &[i128::MAX], None),
             Err(ExactWeilSignError::ArithmeticOverflow { .. })
         ));
+    }
+
+    #[test]
+    fn small_exact_matrices_never_produce_false_positive_or_negative_witness() {
+        // Exhaust all symmetric 2x2 integer matrices with entries in [-2,2]
+        // and every interval obtained by expanding a center by 0 or 1.
+        // The checked upper Rayleigh bound is evaluated against the exact
+        // integer quadratic value; positivity is checked by Sylvester.
+        for a in -2_i128..=2 {
+            for b in -2_i128..=2 {
+                for d in -2_i128..=2 {
+                    for radius in 0_i128..=1 {
+                        let entries = [
+                            interval(a - radius, a + radius),
+                            interval(b - radius, b + radius),
+                            interval(b - radius, b + radius),
+                            interval(d - radius, d + radius),
+                        ];
+                        for witness in [[1_i128, 0], [0, 1], [1, 1], [1, -1]] {
+                            let audit = audit_exact_weil_interval_sign(
+                                2, 1, &entries, &witness, Some(1)
+                            ).unwrap();
+                            let exact_rayleigh =
+                                witness[0] * witness[0] * a
+                                + 2 * witness[0] * witness[1] * b
+                                + witness[1] * witness[1] * d;
+                            assert!(
+                                audit.rayleigh_upper_numerator() >= exact_rayleigh
+                            );
+                            match audit.verdict() {
+                                ExactFiniteWeilSign::StrictlyPositiveFiniteSpan => {
+                                    assert!(a > 0 && a * d - b * b > 0);
+                                }
+                                ExactFiniteWeilSign::StrictlyNegativeWitness => {
+                                    assert!(exact_rayleigh < 0);
+                                }
+                                ExactFiniteWeilSign::Undetermined => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     #[test]
