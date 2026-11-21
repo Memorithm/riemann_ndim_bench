@@ -325,7 +325,7 @@ impl ExactSupportRatio {
     /// Largest positive integer strictly below the exact rational ratio.
     /// This avoids u128 overflow from multiplying integer by denominator.
     fn max_strict_integer(self) -> u64 {
-        if self.numerator % self.denominator == 0 {
+        if self.numerator.is_multiple_of(self.denominator) {
             self.floor - 1
         } else {
             self.floor
