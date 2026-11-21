@@ -20,6 +20,8 @@ Le module [`weil_schur_gate`](src/weil_schur_gate.rs) ajoute un critère de comp
 
 Le nouveau module [`weil_rational_gate`](src/weil_rational_gate.rs) vérifie les signes sur des **intervalles rationnels à dénominateur commun par arithmétique entière exacte** (Gershgorin, témoin négatif de Rayleigh, Schur). Il rejette les débordements `i128` plutôt que de conclure abusivement. Les **bornes d'entrée doivent encore être démontrées par une intégration certifiée** ; le module ne les invente pas et n'établit pas RH. Voir [`docs/EXACT_WEIL_INTERVAL_SIGN_GATE.md`](docs/EXACT_WEIL_INTERVAL_SIGN_GATE.md).
 
+Le calcul de la matrice compacte de Weil utilise aussi les **annulations exactes** des moments de Mellin critiques des fonctions `Qg` (terme polaire identiquement nul) et la **troncature rationnelle exacte** des puissances premières permises par le support. Pour un rapport de supports `b/a ≤ 2`, la contribution de toutes les puissances premières est nulle. Les intégrales archimédiennes restantes ne sont pas certifiées. Voir [`docs/EXACT_WEIL_STRUCTURAL_TERMS.md`](docs/EXACT_WEIL_STRUCTURAL_TERMS.md).
+
 ## État du banc
 
 ### Phase 0–2 — fondation et noyau numérique
