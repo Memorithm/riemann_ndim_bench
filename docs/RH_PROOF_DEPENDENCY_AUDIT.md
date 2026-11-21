@@ -171,6 +171,10 @@ The Rust module `weil_schur_gate` now evaluates finite block-Schur sufficiency m
 
 The new Rust module `weil_rational_gate` computes finite Gershgorin, Rayleigh and block-Schur sign implications using checked integer arithmetic and caller-supplied rational matrix-entry intervals. Its decisions are exact **given the intervals**; the validity of those intervals for the actual compact Weil pairing is not established by the module. Unlike the older `f64` gates, the final comparison incurs no rounding and overflow is rejected. The creation of rigorously validated source-locked matrix-entry intervals, the genuine infinite complement and the global semilocal bridge all remain **OPEN BRIDGES**. See `docs/EXACT_WEIL_INTERVAL_SIGN_GATE.md`.
 
+### Exact compact Mellin pole and prime-support cancellations (November 2026)
+
+In `weil_quadratic_matrix`, the source-level critical Mellin moments for the ideal compact smooth basis `h_j=Qg_j` are now **EXACTLY ZERO** by integration by parts (Connes–Consani, arXiv:2006.13771, Lemma 3.3(ii)). Mixed pole terms consequently vanish without a quadrature residual. The prime-power support cutoff is an exact rational strict inequality `n<b/a`; when `b/a<=2`, no prime power is possible and the nonarchimedean total is exactly zero. These are **exact subcomponents**, not a certified value or sign of the full pairing: the archimedean integral, numerical bump evaluation and any in-window prime correlations remain subject to uncontrolled quadrature/rounding errors. See `docs/EXACT_WEIL_STRUCTURAL_TERMS.md`.
+
 ## 6. The main Riemann-specific open bridge
 
 The next central question is:
