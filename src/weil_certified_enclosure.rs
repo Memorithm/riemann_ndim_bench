@@ -9,8 +9,7 @@ use std::fmt;
 
 use crate::semilocal_compact_archimedean::CompactArchimedeanBump;
 use crate::weil_rational_gate::{
-    ExactWeilSignAudit, ExactWeilSignError, WeilRationalInterval,
-    audit_exact_weil_interval_sign,
+    ExactWeilSignAudit, ExactWeilSignError, WeilRationalInterval, audit_exact_weil_interval_sign,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -177,11 +176,11 @@ pub fn certify_compact_weil_basis_bounds(
     bump: CompactArchimedeanBump,
     degree: usize,
 ) -> Result<CertifiedWeilBasisBounds, CertifiedWeilEnvelopeError> {
-    let b_cross = u128::from(bump.upper().numerator())
-        * u128::from(bump.lower().denominator());
-    let a_cross = u128::from(bump.lower().numerator())
-        * u128::from(bump.upper().denominator());
-    let width = b_cross.checked_sub(a_cross).ok_or_else(|| overflow("width"))?;
+    let b_cross = u128::from(bump.upper().numerator()) * u128::from(bump.lower().denominator());
+    let a_cross = u128::from(bump.lower().numerator()) * u128::from(bump.upper().denominator());
+    let width = b_cross
+        .checked_sub(a_cross)
+        .ok_or_else(|| overflow("width"))?;
     let a = ceil_ratio(b_cross, width, "coordinate scale")?;
     let degree = i128::try_from(degree).map_err(|_| overflow("degree"))?;
     let n = mul(degree, degree, "degree squared")?;
@@ -260,15 +259,12 @@ pub fn certify_compact_weil_matrix_enclosure(
     let entry_count = dimension
         .checked_mul(dimension)
         .ok_or(CertifiedWeilEnvelopeError::DimensionOverflow)?;
-    let b_cross = u128::from(bump.upper().numerator())
-        * u128::from(bump.lower().denominator());
-    let a_cross = u128::from(bump.lower().numerator())
-        * u128::from(bump.upper().denominator());
+    let b_cross = u128::from(bump.upper().numerator()) * u128::from(bump.lower().denominator());
+    let a_cross = u128::from(bump.lower().numerator()) * u128::from(bump.upper().denominator());
     let difference = b_cross
         .checked_sub(a_cross)
         .ok_or_else(|| overflow("ratio difference"))?;
-    let denominator = u128::from(bump.upper().denominator())
-        * u128::from(bump.lower().numerator());
+    let denominator = u128::from(bump.upper().denominator()) * u128::from(bump.lower().numerator());
     let t = ceil_ratio(difference, denominator, "log span ceiling")?;
     let c = add(t, 1, "ratio ceiling")?;
     let sum = b_cross
@@ -372,7 +368,10 @@ mod tests {
         assert_eq!(result.possible_prime_power_count_upper(), 0);
         assert_eq!(result.pairing_intervals().len(), 4);
         assert_eq!(result.pairing_intervals()[1], result.pairing_intervals()[2]);
-        assert_eq!(result.theta_zero_intervals()[1], result.theta_zero_intervals()[2]);
+        assert_eq!(
+            result.theta_zero_intervals()[1],
+            result.theta_zero_intervals()[2]
+        );
         for i in 0..2 {
             let diagonal = result.theta_zero_intervals()[i * 2 + i];
             assert_eq!(diagonal.lower(), 0);
