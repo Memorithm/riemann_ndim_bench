@@ -523,6 +523,19 @@ mod tests {
         .unwrap();
         // A proved Q-image on either side suffices for the source pole.
         assert_eq!(audit.pole_term(), 0.0);
+
+        // An arbitrary trait implementor is NOT automatically treated as
+        // a proved Q-image even if it happens to evaluate the same f64 values.
+        let moments = unknown.boundary_moments(32).unwrap();
+        let approximate = audit_compact_weil_pairing(
+            &unknown,
+            &unknown,
+            CompactWeilPairingConfig::new(24, 24, 32),
+        )
+        .unwrap();
+        let expected = moments.minus_half * moments.plus_half
+            + moments.plus_half * moments.minus_half;
+        assert_eq!(approximate.pole_term(), expected);
     }
 
     #[test]
