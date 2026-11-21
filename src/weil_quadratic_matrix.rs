@@ -517,8 +517,8 @@ fn audit_pairing(
         let shift = (integer as f64).ln();
         let theta_positive = correlation.value(shift)?;
         let theta_negative = correlation.value(-shift)?;
-        let contribution = (prime as f64).ln() / (integer as f64).sqrt()
-            * (theta_positive + theta_negative);
+        let contribution =
+            (prime as f64).ln() / (integer as f64).sqrt() * (theta_positive + theta_negative);
         checked_finite("mixed prime-power contribution", contribution)?;
         prime_total += contribution;
     }
@@ -720,11 +720,8 @@ mod tests {
     #[test]
     fn exact_rational_support_excludes_prime_powers_at_or_above_ratio() {
         let unit = PositiveRational::new(1, 1).unwrap();
-        let boundary_two = CompactArchimedeanBump::new(
-            unit,
-            PositiveRational::new(2, 1).unwrap(),
-        )
-        .unwrap();
+        let boundary_two =
+            CompactArchimedeanBump::new(unit, PositiveRational::new(2, 1).unwrap()).unwrap();
         let strict_two = ExactSupportRatio::from_bump(boundary_two).unwrap();
         assert_eq!(strict_two.max_strict_integer(), 1);
         let matrix = audit_finite_weil_quadratic_matrix(boundary_two, 2, 28, 28, 32).unwrap();
@@ -741,24 +738,24 @@ mod tests {
         assert_eq!(pairing.pole_term(), 0.0);
         assert_eq!(pairing.prime_total(), 0.0);
 
-        let above_two = CompactArchimedeanBump::new(
-            unit,
-            PositiveRational::new(5, 2).unwrap(),
-        )
-        .unwrap();
+        let above_two =
+            CompactArchimedeanBump::new(unit, PositiveRational::new(5, 2).unwrap()).unwrap();
         let ratio = ExactSupportRatio::from_bump(above_two).unwrap();
         assert_eq!(ratio.max_strict_integer(), 2);
-        let exact_three = CompactArchimedeanBump::new(
-            unit,
-            PositiveRational::new(3, 1).unwrap(),
-        )
-        .unwrap();
-        assert_eq!(ExactSupportRatio::from_bump(exact_three)
-            .unwrap()
-            .max_strict_integer(), 2);
-        assert_eq!(ExactSupportRatio::from_bump(bump())
-            .unwrap()
-            .max_strict_integer(), 3);
+        let exact_three =
+            CompactArchimedeanBump::new(unit, PositiveRational::new(3, 1).unwrap()).unwrap();
+        assert_eq!(
+            ExactSupportRatio::from_bump(exact_three)
+                .unwrap()
+                .max_strict_integer(),
+            2
+        );
+        assert_eq!(
+            ExactSupportRatio::from_bump(bump())
+                .unwrap()
+                .max_strict_integer(),
+            3
+        );
     }
 
     #[test]
