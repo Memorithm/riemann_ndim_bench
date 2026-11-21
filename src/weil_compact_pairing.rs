@@ -5,6 +5,10 @@
 //! [`CompactWeilEvaluand`] rather than a polynomial degree.  It is therefore
 //! suitable for independent cross-checks with non-polynomial compact families.
 //!
+//! Source Q-images explicitly opt into exact pole cancellation; arbitrary
+//! custom evaluands retain the original numerical moment calculation.
+//! Their numerical boundary residuals are never promoted to a proof.
+//!
 //! The result is still a finite numerical audit.  It does not establish
 //! complete-space Weil positivity, density/completeness, Conjecture 4.1, or RH.
 
@@ -29,6 +33,16 @@ pub trait CompactWeilEvaluand {
         &self,
         quadrature_order: usize,
     ) -> Result<WeilBoundaryMoments, WeilBoundaryError>;
+
+    /// Exact source-level assertion: the ideal test function is Qg for
+    /// some smooth compact generator g, so BOTH Mellin moments at
+    /// s = +/-1/2 vanish identically (Connes--Consani, Lemma 3.3(ii)).
+    ///
+    /// Default false: general implementations MUST NOT inherit this
+    /// property merely from numerical boundary residuals.
+    fn exact_q_image_mellin_zero(&self) -> bool {
+        false
+    }
 }
 
 impl CompactWeilEvaluand for CompactWeilBasisFunction {
@@ -49,6 +63,10 @@ impl CompactWeilEvaluand for CompactWeilBasisFunction {
     ) -> Result<WeilBoundaryMoments, WeilBoundaryError> {
         (*self).boundary_moments(quadrature_order)
     }
+
+    fn exact_q_image_mellin_zero(&self) -> bool {
+        true
+    }
 }
 
 impl CompactWeilEvaluand for CompactSineWeilFunction {
@@ -68,6 +86,10 @@ impl CompactWeilEvaluand for CompactSineWeilFunction {
         quadrature_order: usize,
     ) -> Result<WeilBoundaryMoments, WeilBoundaryError> {
         (*self).boundary_moments(quadrature_order)
+    }
+
+    fn exact_q_image_mellin_zero(&self) -> bool {
+        true
     }
 }
 
@@ -341,9 +363,19 @@ where
         .abs()
         .max(right_moments.minus_half.abs());
 
-    let pole_term = left_moments.minus_half * right_moments.plus_half
-        + left_moments.plus_half * right_moments.minus_half;
-    checked_finite("mixed critical pole term", pole_term)?;
+    // When either factor has a known EXACT Q-image origin, both critical
+    // Mellin moments of that factor vanish, so the mixed source pole
+    // vanishes. Keep numerical quadrature moments as diagnostics only.
+    // For arbitrary evaluands without this provenance, retain the
+    // existing numerical pole formula (NOT a certified exact quantity).
+    let pole_term = if left.exact_q_image_mellin_zero() || right.exact_q_image_mellin_zero() {
+        0.0
+    } else {
+        let numeric = left_moments.minus_half * right_moments.plus_half
+            + left_moments.plus_half * right_moments.minus_half;
+        checked_finite("mixed critical pole term", numeric)?;
+        numeric
+    };
 
     let theta_zero = correlation.value(0.0)?;
     let archimedean_term =
@@ -456,6 +488,53 @@ mod tests {
             PositiveRational::new(7, 2).unwrap(),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn q_image_provenance_defaults_to_untrusted_for_arbitrary_evaluands() {
+        struct UnknownProvenance(CompactWeilBasisFunction);
+        impl CompactWeilEvaluand for UnknownProvenance {
+            fn bump(&self) -> CompactArchimedeanBump {
+                self.0.bump()
+            }
+
+            fn value(&self, rho: f64) -> Result<f64, WeilBoundaryError> {
+                self.0.value(rho)
+            }
+
+            fn boundary_moments(
+                &self,
+                quadrature_order: usize,
+            ) -> Result<WeilBoundaryMoments, WeilBoundaryError> {
+                self.0.boundary_moments(quadrature_order)
+            }
+        }
+
+        let supported = CompactWeilBasisFunction::new(bump(), 0);
+        let unknown = UnknownProvenance(supported);
+        assert!(supported.exact_q_image_mellin_zero());
+        assert!(!unknown.exact_q_image_mellin_zero());
+        let audit = audit_compact_weil_pairing(
+            &supported,
+            &unknown,
+            CompactWeilPairingConfig::new(24, 24, 32),
+        )
+        .unwrap();
+        // A proved Q-image on either side suffices for the source pole.
+        assert_eq!(audit.pole_term(), 0.0);
+
+        // An arbitrary trait implementor is NOT automatically treated as
+        // a proved Q-image even if it happens to evaluate the same f64 values.
+        let moments = unknown.boundary_moments(32).unwrap();
+        let approximate = audit_compact_weil_pairing(
+            &unknown,
+            &unknown,
+            CompactWeilPairingConfig::new(24, 24, 32),
+        )
+        .unwrap();
+        let expected =
+            moments.minus_half * moments.plus_half + moments.plus_half * moments.minus_half;
+        assert_eq!(approximate.pole_term(), expected);
     }
 
     #[test]

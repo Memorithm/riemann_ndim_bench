@@ -15,6 +15,11 @@
 //! the source pairing `psi(h_i^* * h_j)` using the same compact Riemann--Weil
 //! decomposition as `weil_finite_functional`.
 //!
+//! Pole cancellation at Mellin exponents +/-1/2 and prime-power support
+//! exclusion are exact for the ideal C-infinity compact Qg_j family, not
+//! numerical convergence claims. The archimedean and in-support prime
+//! integrals are still ordinary binary64 quadrature without certified errors.
+//!
 //! A finite matrix, even when positive semidefinite, is only a restriction of
 //! the Weil quadratic form to the declared finite basis. No finite-dimensional
 //! eigenvalue sign is promoted to Weil positivity or RH.
@@ -171,6 +176,7 @@ pub struct FiniteWeilQuadraticMatrixAudit {
     eigenvalues: Vec<f64>,
     boundary_residuals: Vec<f64>,
     max_raw_pairing_asymmetry: f64,
+    max_strict_prime_argument: u64,
 }
 
 impl FiniteWeilQuadraticMatrixAudit {
@@ -210,6 +216,21 @@ impl FiniteWeilQuadraticMatrixAudit {
     #[inline]
     pub fn max_raw_pairing_asymmetry(&self) -> f64 {
         self.max_raw_pairing_asymmetry
+    }
+
+    /// Largest integer strictly inside the exact convolution support ratio.
+    ///
+    /// Only prime powers n >= 2 up to this bound can contribute. When this
+    /// value is < 2 the non-archimedean term vanishes identically for the
+    /// *ideal smooth compactly supported* test functions, independent of
+    /// correlation quadrature, floating-point logs or the matrix dimension.
+    #[inline]
+    pub const fn max_strict_prime_argument(&self) -> u64 {
+        self.max_strict_prime_argument
+    }
+
+    pub const fn prime_power_sum_provably_zero(&self) -> bool {
+        self.max_strict_prime_argument < 2
     }
 
     /// Smallest eigenvalue of the leading `size x size` principal submatrix.
@@ -301,8 +322,14 @@ impl ExactSupportRatio {
         })
     }
 
-    fn integer_is_boundary(self, integer: u64) -> bool {
-        u128::from(integer) * self.denominator == self.numerator
+    /// Largest positive integer strictly below the exact rational ratio.
+    /// This avoids u128 overflow from multiplying integer by denominator.
+    fn max_strict_integer(self) -> u64 {
+        if self.numerator.is_multiple_of(self.denominator) {
+            self.floor - 1
+        } else {
+            self.floor
+        }
     }
 
     fn as_f64(self) -> f64 {
@@ -410,7 +437,6 @@ pub fn audit_finite_weil_quadratic_matrix(
                 ratio,
                 correlation_order,
                 archimedean_order,
-                boundary_order,
             )?;
             let value = if i == j {
                 forward.value()
@@ -421,7 +447,6 @@ pub fn audit_finite_weil_quadratic_matrix(
                     ratio,
                     correlation_order,
                     archimedean_order,
-                    boundary_order,
                 )?;
                 max_raw_pairing_asymmetry =
                     max_raw_pairing_asymmetry.max((forward.value() - reverse.value()).abs());
@@ -447,6 +472,7 @@ pub fn audit_finite_weil_quadratic_matrix(
         eigenvalues,
         boundary_residuals,
         max_raw_pairing_asymmetry,
+        max_strict_prime_argument: ratio.max_strict_integer(),
     })
 }
 
@@ -456,32 +482,43 @@ fn audit_pairing(
     ratio: ExactSupportRatio,
     correlation_order: usize,
     archimedean_order: usize,
-    boundary_order: usize,
 ) -> Result<FiniteWeilPairingAudit, FiniteWeilMatrixError> {
     let correlation = MixedLogCorrelation::new(left, right, correlation_order)?;
-    let left_moments = left.boundary_moments(boundary_order)?;
-    let right_moments = right.boundary_moments(boundary_order)?;
-    let pole_term = left_moments.minus_half * right_moments.plus_half
-        + left_moments.plus_half * right_moments.minus_half;
-    checked_finite("mixed critical pole term", pole_term)?;
+
+    // EXACT source-level identity, not a quadrature approximation:
+    // h_j = Q g_j, Q = -d_x^2 + 1/4, x=ln(rho), g_j in C_c^infinity.
+    // Integration by parts gives
+    //   integral h_j(e^x) e^(s*x) dx
+    //     = (1/4 - s^2) integral g_j(e^x) e^(s*x) dx.
+    // Both critical Mellin moments therefore vanish at s=+/-1/2,
+    // including every mixed pole contribution. See Connes--Consani
+    // (arXiv:2006.13771), Lemma 3.3(ii).
+    //
+    // Boundary moments remain separately integrated in the *diagnostic*
+    // matrix audit; they must not pollute the exact ideal pole term.
+    // The numerical LOG_UNDERFLOW_GUARD in pointwise value evaluation is
+    // only an approximation to the ideal smooth bump, not a proof of
+    // an error bound for the remaining archimedean and prime integrals.
+    let pole_term = 0.0;
 
     let theta_zero = correlation.value(0.0)?;
     let archimedean_term =
         mixed_archimedean_term(&correlation, theta_zero, ratio, archimedean_order)?;
 
     let mut prime_total = 0.0_f64;
-    for integer in 2..=ratio.floor {
+    // For h_i,h_j supported on [a,b], the convolution h_i^* * h_j
+    // vanishes outside [a/b,b/a]. At n=b/a the smooth endpoint is zero.
+    // The strict upper integer threshold is computed from exact rational
+    // support endpoints, not floating-point exp/log comparisons.
+    for integer in 2..=ratio.max_strict_integer() {
         let Some((prime, _exponent)) = prime_power_decomposition(integer) else {
             continue;
         };
-        let contribution = if ratio.integer_is_boundary(integer) {
-            0.0
-        } else {
-            let shift = (integer as f64).ln();
-            let theta_positive = correlation.value(shift)?;
-            let theta_negative = correlation.value(-shift)?;
-            (prime as f64).ln() / (integer as f64).sqrt() * (theta_positive + theta_negative)
-        };
+        let shift = (integer as f64).ln();
+        let theta_positive = correlation.value(shift)?;
+        let theta_negative = correlation.value(-shift)?;
+        let contribution =
+            (prime as f64).ln() / (integer as f64).sqrt() * (theta_positive + theta_negative);
         checked_finite("mixed prime-power contribution", contribution)?;
         prime_total += contribution;
     }
@@ -649,6 +686,85 @@ mod tests {
         assert!(audit.max_raw_pairing_asymmetry() <= 5.0e-12);
         assert!(audit.max_boundary_residual() <= 2.0e-10);
         assert!(audit.eigenvalues().iter().all(|value| value.is_finite()));
+    }
+
+    #[test]
+    fn exact_mellin_pole_is_not_reintroduced_by_boundary_quadrature() {
+        let b = bump();
+        let ratio = ExactSupportRatio::from_bump(b).unwrap();
+        // Both mixed and diagonal source Q-images have exactly zero poles;
+        // the numerical boundary residuals remain a separate diagnostic.
+        for (left, right) in [(0, 0), (0, 1), (1, 0), (1, 1)] {
+            let entry = audit_pairing(
+                CompactWeilBasisFunction::new(b, left),
+                CompactWeilBasisFunction::new(b, right),
+                ratio,
+                28,
+                28,
+            )
+            .unwrap();
+            assert_eq!(entry.pole_term(), 0.0);
+        }
+
+        // Changing only the diagnostic boundary quadrature order must
+        // no longer perturb any finite Weil pairing coefficient.
+        let coarse = audit_finite_weil_quadratic_matrix(b, 2, 28, 28, 8).unwrap();
+        let fine = audit_finite_weil_quadratic_matrix(b, 2, 28, 28, 96).unwrap();
+        for row in 0..2 {
+            for col in 0..2 {
+                assert_eq!(coarse.entry(row, col), fine.entry(row, col));
+            }
+        }
+    }
+
+    #[test]
+    fn exact_rational_support_excludes_prime_powers_at_or_above_ratio() {
+        let unit = PositiveRational::new(1, 1).unwrap();
+        let boundary_two =
+            CompactArchimedeanBump::new(unit, PositiveRational::new(2, 1).unwrap()).unwrap();
+        let strict_two = ExactSupportRatio::from_bump(boundary_two).unwrap();
+        assert_eq!(strict_two.max_strict_integer(), 1);
+        let matrix = audit_finite_weil_quadratic_matrix(boundary_two, 2, 28, 28, 32).unwrap();
+        assert!(matrix.prime_power_sum_provably_zero());
+        assert_eq!(matrix.max_strict_prime_argument(), 1);
+        let pairing = audit_pairing(
+            CompactWeilBasisFunction::new(boundary_two, 0),
+            CompactWeilBasisFunction::new(boundary_two, 1),
+            strict_two,
+            28,
+            28,
+        )
+        .unwrap();
+        assert_eq!(pairing.pole_term(), 0.0);
+        assert_eq!(pairing.prime_total(), 0.0);
+
+        let above_two =
+            CompactArchimedeanBump::new(unit, PositiveRational::new(5, 2).unwrap()).unwrap();
+        let ratio = ExactSupportRatio::from_bump(above_two).unwrap();
+        assert_eq!(ratio.max_strict_integer(), 2);
+        let exact_three =
+            CompactArchimedeanBump::new(unit, PositiveRational::new(3, 1).unwrap()).unwrap();
+        assert_eq!(
+            ExactSupportRatio::from_bump(exact_three)
+                .unwrap()
+                .max_strict_integer(),
+            2
+        );
+        let ratio_seven_halves =
+            CompactArchimedeanBump::new(unit, PositiveRational::new(7, 2).unwrap()).unwrap();
+        assert_eq!(
+            ExactSupportRatio::from_bump(ratio_seven_halves)
+                .unwrap()
+                .max_strict_integer(),
+            3
+        );
+        // The legacy shared fixture has ratio (7/2)/(1/2) = 7.
+        assert_eq!(
+            ExactSupportRatio::from_bump(bump())
+                .unwrap()
+                .max_strict_integer(),
+            6
+        );
     }
 
     #[test]

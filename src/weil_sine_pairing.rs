@@ -269,6 +269,11 @@ impl CompactWeilEvaluand for ProjectedLegendreWeilFunction {
             minus_half,
         })
     }
+    // The projection is a finite linear combination of ideal Qg_j.
+    // The source Mellin moments at +/-1/2 vanish termwise and exactly.
+    fn exact_q_image_mellin_zero(&self) -> bool {
+        true
+    }
 }
 
 #[derive(Clone, Copy)]
