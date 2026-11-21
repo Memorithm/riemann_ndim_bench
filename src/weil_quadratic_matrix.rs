@@ -750,11 +750,20 @@ mod tests {
                 .max_strict_integer(),
             2
         );
+        let ratio_seven_halves =
+            CompactArchimedeanBump::new(unit, PositiveRational::new(7, 2).unwrap()).unwrap();
+        assert_eq!(
+            ExactSupportRatio::from_bump(ratio_seven_halves)
+                .unwrap()
+                .max_strict_integer(),
+            3
+        );
+        // The legacy shared fixture has ratio (7/2)/(1/2) = 7.
         assert_eq!(
             ExactSupportRatio::from_bump(bump())
                 .unwrap()
                 .max_strict_integer(),
-            3
+            6
         );
     }
 
