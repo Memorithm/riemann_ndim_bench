@@ -11,8 +11,10 @@ Implementation: src/weil_rational_gate.rs.
 The prior finite sign and block-Schur modules evaluate their margins in
 binary64 floating point. This implementation decides signs with checked
 128-bit integer operations only, eliminating roundoff from the final
-decision. The unresolved upstream problem is still to generate *proven*
-enclosures for the actual Weil matrix entries.
+decision. A new analytic source-locked module now constructs *proven but very wide*
+full-entry enclosures for the ideal compact Qg Legendre family. The unresolved
+upstream problem is to tighten them via independently certified integration
+and floating-point elementary-function errors.
 
 ## Input contract
 
@@ -72,11 +74,22 @@ every negative witness against its exact quadratic form.
     cargo test --locked weil_rational_gate
     cargo test --locked --all-targets
 
+## Valid but coarse source-locked input
+
+The module [src/weil_certified_enclosure.rs](../src/weil_certified_enclosure.rs)
+derives checked-integer [-B_ij,+B_ij] intervals for the *actual ideal*
+compact Weil matrix, including full archimedean and eligible prime terms.
+These satisfy this gate's mathematical input contract with scale S=1,
+without relying on numerical quadrature. The initial intervals are
+symmetric about zero and **cannot establish any nonzero Weil sign**.
+See [CERTIFIED_COMPACT_WEIL_ENCLOSURES.md](CERTIFIED_COMPACT_WEIL_ENCLOSURES.md)
+for the analytic proof, support assumptions and limits.
+
 ## Still open
 
-1. Construct genuinely validated, source-locked entry enclosures for
-   the actual compact Weil pairing, including integration, approximation
-   and rounding errors.
+1. Tighten the now-available rigorous but extremely coarse source-locked
+   full-entry enclosures using validated integration, local approximation,
+   transcendental evaluation and rounding error bounds.
 2. Run this exact checker on those enclosures and retain provenance.
 3. Identify the correct near-self-dual projector and infinite-dimensional
    Sonin complement; prove uniform coercivity and coupling estimates.

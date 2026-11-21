@@ -30,6 +30,7 @@ pub mod weil_bernstein_evidence_grid;
 pub mod weil_bernstein_probe;
 pub mod weil_bernstein_subspace;
 pub mod weil_boundary;
+pub mod weil_certified_enclosure;
 pub mod weil_coefficient_subspace;
 pub mod weil_compact_pairing;
 pub mod weil_evidence_grid;

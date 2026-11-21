@@ -175,6 +175,10 @@ The new Rust module `weil_rational_gate` computes finite Gershgorin, Rayleigh an
 
 In `weil_quadratic_matrix`, the source-level critical Mellin moments for the ideal compact smooth basis `h_j=Qg_j` are now **EXACTLY ZERO** by integration by parts (Connes–Consani, arXiv:2006.13771, Lemma 3.3(ii)). Mixed pole terms consequently vanish without a quadrature residual. The prime-power support cutoff is an exact rational strict inequality `n<b/a`; when `b/a<=2`, no prime power is possible and the nonarchimedean total is exactly zero. These are **exact subcomponents**, not a certified value or sign of the full pairing: the archimedean integral, numerical bump evaluation and any in-window prime correlations remain subject to uncontrolled quadrature/rounding errors. See `docs/EXACT_WEIL_STRUCTURAL_TERMS.md`.
 
+### Exact analytic full-entry envelopes for the finite compact Qg matrix (November 2026)
+
+**EXACT inequalities / finite arithmetic, not a sign proof.** `src/weil_certified_enclosure.rs` now constructs unconditional, analytically valid integer intervals `[-B_ij,+B_ij]` for each **ideal** finite compact Weil pairing entry. The derivation uses elementary smooth-bump derivative bounds, Legendre/Markov polynomial inequalities, a controlled archimedean removable singularity, exact support truncation of prime powers and the previously established vanishing of Mellin poles. No `f64` quadrature result is used to justify the interval, and integer overflow rejects construction. These bounds are **very wide**, and their exact sign-gate verdict is inconclusive on the tested fixtures. They do not bound the error of the *computed* binary64 matrix, certify eigenvalues, or imply infinite-dimensional Weil positivity. A tight validated quadrature pipeline and the semilocal-to-global RH bridge remain **OPEN BRIDGE**. Detailed derivation: `docs/CERTIFIED_COMPACT_WEIL_ENCLOSURES.md`.
+
 ## 6. The main Riemann-specific open bridge
 
 The next central question is:
