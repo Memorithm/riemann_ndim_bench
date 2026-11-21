@@ -49,6 +49,14 @@ as the mathematical Mellin moments of the ideal function**.
 In particular, changing the `boundary_order` alone can now change
 the reported numerical diagnostics but cannot change matrix entries.
 
+### Scalar Weil functional
+
+The existing `audit_finite_weil_functional` evaluates the scalar test
+`h_1=Qg` from `CompactWeilTestFunction`. Its exact critical pole term
+is now also zero. The scalar source value, like the Legendre matrix,
+cannot change merely by refining the *diagnostic* Mellin quadrature
+order; the `boundary()` audit itself remains available and numerical.
+
 ### Generic compact and projected-sine routes
 
 The generic `CompactWeilEvaluand` trait now has the source-provenance
