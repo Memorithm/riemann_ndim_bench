@@ -303,12 +303,13 @@ pub fn audit_finite_weil_functional(
     let log_support_radius = autocorrelation.log_span;
     let theta_zero = autocorrelation.value(0.0)?;
     let boundary = test_function.audit_boundary_moments(boundary_order)?;
-    let moments = boundary.moments();
 
-    // For real h1 and F = h1^* * h1, multiplicative Fourier convolution gives
-    // Fhat(+i/2) = Fhat(-i/2) = M_+(h1) M_-(h1).
-    let pole_term = 2.0 * moments.plus_half * moments.minus_half;
-    checked_finite("critical pole term", pole_term)?;
+    // The ideal compact test h1 is Qg with Q=-d_(log rho)^2+1/4.
+    // Compact integration by parts gives M_+(h1)=M_-(h1)=0 EXACTLY
+    // (Connes--Consani, Lemma 3.3(ii), arXiv:2006.13771).
+    // Keep boundary quadrature only for numerical diagnostics, never
+    // reintroduce its approximation residual into the source pole.
+    let pole_term = 0.0;
 
     let archimedean_term =
         archimedean_weil_term(&autocorrelation, theta_zero, archimedean_order, ratio)?;
@@ -480,6 +481,17 @@ mod tests {
         let audit = audit_finite_weil_functional(fixture(), 128, 96, 128).unwrap();
         assert!(audit.max_prime_symmetry_residual() <= 2.0e-14);
         assert!(audit.autocorrelation_zero() > 0.0);
+    }
+
+    #[test]
+    fn exact_q_image_pole_is_independent_of_diagnostic_boundary_order() {
+        let coarse = audit_finite_weil_functional(fixture(), 28, 28, 8).unwrap();
+        let fine = audit_finite_weil_functional(fixture(), 28, 28, 96).unwrap();
+        assert_eq!(coarse.pole_term(), 0.0);
+        assert_eq!(fine.pole_term(), 0.0);
+        assert_eq!(coarse.functional_value(), fine.functional_value());
+        assert_eq!(coarse.archimedean_term(), fine.archimedean_term());
+        assert_eq!(coarse.prime_total(), fine.prime_total());
     }
 
     #[test]
