@@ -368,15 +368,14 @@ where
     // vanishes. Keep numerical quadrature moments as diagnostics only.
     // For arbitrary evaluands without this provenance, retain the
     // existing numerical pole formula (NOT a certified exact quantity).
-    let pole_term =
-        if left.exact_q_image_mellin_zero() || right.exact_q_image_mellin_zero() {
-            0.0
-        } else {
-            let numeric = left_moments.minus_half * right_moments.plus_half
-                + left_moments.plus_half * right_moments.minus_half;
-            checked_finite("mixed critical pole term", numeric)?;
-            numeric
-        };
+    let pole_term = if left.exact_q_image_mellin_zero() || right.exact_q_image_mellin_zero() {
+        0.0
+    } else {
+        let numeric = left_moments.minus_half * right_moments.plus_half
+            + left_moments.plus_half * right_moments.minus_half;
+        checked_finite("mixed critical pole term", numeric)?;
+        numeric
+    };
 
     let theta_zero = correlation.value(0.0)?;
     let archimedean_term =
@@ -533,8 +532,8 @@ mod tests {
             CompactWeilPairingConfig::new(24, 24, 32),
         )
         .unwrap();
-        let expected = moments.minus_half * moments.plus_half
-            + moments.plus_half * moments.minus_half;
+        let expected =
+            moments.minus_half * moments.plus_half + moments.plus_half * moments.minus_half;
         assert_eq!(approximate.pole_term(), expected);
     }
 
