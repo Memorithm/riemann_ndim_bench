@@ -49,6 +49,27 @@ as the mathematical Mellin moments of the ideal function**.
 In particular, changing the `boundary_order` alone can now change
 the reported numerical diagnostics but cannot change matrix entries.
 
+### Generic compact and projected-sine routes
+
+The generic `CompactWeilEvaluand` trait now has the source-provenance
+method `exact_q_image_mellin_zero()`, defaulting to **false** for
+unqualified implementations. The known `CompactWeilBasisFunction` and
+`CompactSineWeilFunction` implementors and the finite linear combinations
+`ProjectedLegendreWeilFunction` and `ProjectedSineWeilFunction` opt
+in because they all represent ideal `Qg` test functions.
+
+In the generic mixed pairing, a guaranteed Q-image on **either** side
+annihilates both critical pole summands, irrespective of the other factor.
+The numerical moments are still calculated for diagnostic residuals.
+If *neither* side has Q-image provenance, the generic route retains its
+legacy numerical pole calculation; a small observed residual never upgrades
+an arbitrary function into an exact Q-image. This preserves the generic
+API's ability to inspect unqualified user-defined evaluands.
+
+The direct sine and projected Legendre comparisons now share the same
+source-level pole convention as the parent Legendre matrix; the
+cross-route regression tests remain strict rather than being loosened.
+
 ## 2. Exact finite prime-power support
 
 If `h_i,h_j` are both supported in `[a,b]` with `0<a<b`, then
